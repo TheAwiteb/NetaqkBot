@@ -1,0 +1,60 @@
+{
+    "messages": {
+        "ar": {
+            "start":"مرحبا #full_name هذه رسالة البداية",
+            "help":"رسالة المساعدة",
+            "admin_start":"مرحبا #first_name لرؤية اوامر التحكم اضغط هنا /help ويمكنك الدخول على لوحة التحكم من الزر ادناه",
+            "admin_help":"رسالة المساعدة الخاصة بالادمن",
+            "user_home_page_message": "رسالة الصفحة الرئيسية",
+            "admin_home_page_message": "رسالة لوحة التحكم",
+            "user_home_page_button": "اللوحة الرئيسية",
+            "admin_home_page_button": "لوحة التحكم",
+            "free_plan":"مجانية",
+            "bronze_plan":"برونزية",
+            "silver_plan":"فضية",
+            "golden_plan":"ذهبية",
+            "diamond_plan":"ماسية",
+            "admin_plan":"ادمن",
+            "plan_button":"الخطة",
+            "get_url_button":"ارسال الرابط",
+            "statistics_button":"الاحصائيات",
+            "sessions_button":"الجلسات",
+            "creat_user_button":"انشاء مستخدم",
+            "settings_button":"الاعدادات",
+            "invalid_registration":"عذرا #full_name رقم التسجيل غير صحيح تواصل مع الدعم الفني /help",
+            "cancel_message":"تم الالغاء بنجاح",
+            "invalid_message_try_again":"الرجاء ادخال رسالة صحيحة حاول مجددا",
+            "send_username_message":"الرجاء ادخال اسم المستخدم",
+            "send_password_message":"الرجاء ادخال كلمة المرور",
+            "send_new_username_message":"الرجاء ادخال اسم المستخدم الجديد",
+            "send_new_password_message":"الرجاء ادخال كلمة المرور الجديدة",
+            "change_language_message":"ااختار اللغة من الاسفل",
+            "create_account_successful":"تم انشاء الحساب بنجاح يمكنك تسجيل الدخول الان /login\nاسم المستخدم هو {}",
+            "already_exists_username":"اسم المستخدم هذا مستخدم بالفعل",
+            "get_language_successful":"تم التغير بنجاح الى اللغة العربية",
+            "password_length_error":"كلمة المرور قصيرة يجب ان تكون اكبر من او يساوي {}",
+            "password_uppercase_error":"عدد الاحرف الكبيرة قليل يجب ان تكون اكبر من او يساوي {}",
+            "password_numbers_error":"عدد الارقام قليل يجب ان تكون اكبر من او يساوي {}",
+            "password_special_error":"عدد الرموز المميزة يجب ان تكون اكبر من او يساوي {}",
+            "similar_password_to_username_error": "كلمة المرور واسم المستخدم متشابهين",
+            "invalid_password_try_again":"كلمة مرور غير صحيحة حاول مجددا",
+            "invalid_password_or_username":"كلمة المرور او اسم المستخدم غير صحيحين",
+            "in_session":"انت في جلسة حقا في هذا المستخدم #username",
+            "not_in_session":"انت لست في جلسة حقا",
+            "login_successful":"تم تسجيل الدخول بنجاح بهذا المستخدم #username",
+            "logout_successful":"تم تسجيل الخروج بنجاح من هذا المستخدم #username"
+        },
+        "en": {
+            "start":"start message",
+            "help":"help message"
+        }
+    },
+    "plans": {
+        "free":{"email_limit":10, "is_admin":false},
+        "bronze":{"email_limit":20, "is_admin":false},
+        "silver":{"email_limit":30, "is_admin":false},
+        "golden":{"email_limit":40, "is_admin":false},
+        "diamond":{"email_limit":50, "is_admin":false},
+        "admin":{"email_limit":null, "is_admin":true}
+    }
+}

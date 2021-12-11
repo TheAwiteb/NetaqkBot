@@ -11,8 +11,8 @@ class User(Model):
     username = CharField(null=False, unique=True)
     password = CharField(null=True, default=None)
     # اللغة التي سوف يرسل بها البوت
-    language = CharField(null=True, max_length=2)
-    plan = CharField(null=False, max_length=20)
+    language = CharField(null=True, max_length=3)
+    plan_name = CharField(null=False)
 
     created_at = DateTimeField(default=datetime.now)
 
@@ -31,3 +31,42 @@ class Session(Model):
 
     created_at = DateTimeField(default=datetime.now)
     last_record = DateTimeField(default=datetime.now)
+
+
+class Message(Model):
+    class Meta:
+        database = db
+        db_table = "Messages"
+
+    message_name = CharField(null=False)
+    message = CharField(null=False)
+    language = CharField(null=False, max_length=3)
+
+
+class Plan(Model):
+    class Meta:
+        database = db
+        db_table = "Plans"
+
+    name = CharField(null=False)
+    email_limit = IntegerField(null=True)
+    is_admin = BooleanField(null=False, default=False)
+
+
+class Url(Model):
+    class Meta:
+        database = db
+        db_table = "Urls"
+
+    urls_type = [
+        "register",
+        "reset_password",
+    ]
+
+    unique_code = CharField(null=False)
+    url_type = CharField(null=False, choices=urls_type)
+    plan_name = CharField(null=True)  # for register
+    username = CharField(null=True)  # for reset password
+    using_limit = IntegerField(
+        null=False, default=1
+    )  # for register you can put more than one

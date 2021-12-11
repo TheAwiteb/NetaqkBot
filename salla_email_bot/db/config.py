@@ -6,7 +6,7 @@ load_dotenv()
 
 db_name = os.environ.get("SQLITE_EMALIL_BOT") or "email_bot.sqlite3"
 
-db = SqliteDatabase(db_name, thread_safe=False)
+db = SqliteDatabase(db_name, thread_safe=False, check_same_thread=False)
 
 if not os.path.exists(db_name):
     from db.utils import make

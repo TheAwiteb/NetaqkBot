@@ -1,7 +1,9 @@
 """
 سوف يتم حفظ المتغيرات الاساسية في هذا الملف
 """
+from password_strength import PasswordPolicy
 from os import environ
+from pathlib import Path
 from dotenv import load_dotenv
 from telebot import TeleBot
 from telebot.types import (
@@ -11,6 +13,24 @@ from telebot.types import (
 )
 
 load_dotenv()
+
+# password policy
+length = 8  # min length: 10
+uppercase = 1  # need min. 1 uppercase letters
+numbers = 1  # need min. 1 digits
+special = 1  # need min. 1 special characters
+
+similarity2username = (
+    65 / 100
+)  # Percentage password similarity to username, default is 65%
+
+password_policy = PasswordPolicy.from_names(
+    length=length,
+    uppercase=uppercase,
+    numbers=numbers,
+    special=special,
+)
+
 
 # التوكن الخاص بالبوت
 # يمكن جلب التوكن الخاص بالبوت من
@@ -22,6 +42,9 @@ TOKEN = (
         "Enter your bot token (Get from @ https://t.me/botfather): "
     )  # او ادخله عند طلبه منك
 )
+
+# BASE_DIR is: path_to/salla_email_bot/salla_email_bot
+BASE_DIR = Path(__file__).parent
 
 # البوت
 BOT: TeleBot = TeleBot(TOKEN)
@@ -50,6 +73,7 @@ COMMANDS = {
             BotCommand("start", "رسالة البداية."),
             BotCommand("login", "تسجيل الدخول الى حسابك."),
             BotCommand("logout", "تسجيل الخروج من حسابك."),
+            BotCommand("cancel", "لالغاء العملية."),
         ],
     },
     # الاوامر باللغات الاخرى
@@ -64,6 +88,7 @@ COMMANDS = {
             BotCommand("start", "Start message."),
             BotCommand("login", "Login to your account."),
             BotCommand("logout", "Logout from your account."),
+            BotCommand("cancel", "For cancel the process."),
         ],
     },
 }
