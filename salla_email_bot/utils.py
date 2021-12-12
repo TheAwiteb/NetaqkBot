@@ -232,7 +232,9 @@ def language_message(message: types.Message, language: str) -> str:
 def get_password_process(
     message: types.Message, function_, language: str, **kwargs
 ) -> None:
-    cancel_message = get_message("cancel_message", language, msg=message, with_format=True)
+    cancel_message = get_message(
+        "cancel_message", language, msg=message, with_format=True
+    )
     invalid_message_try_again = get_message(
         "invalid_message_try_again", language, msg=message, with_format=True
     )
@@ -273,9 +275,7 @@ def register_(
                 password=password[0], username=username, language=language
             )
         ):
-            if Url.get_or_none(
-                Url.unique_code == url.unique_code
-            ):
+            if Url.get_or_none(Url.unique_code == url.unique_code):
                 User.create(
                     username=username,
                     plan_name=url.plan_name,
@@ -321,14 +321,17 @@ def get_username_process(
     **kwargs,
 ) -> None:
 
-    cancel_message = get_message("cancel_message", language, msg=message, with_format=True)
+    cancel_message = get_message(
+        "cancel_message", language, msg=message, with_format=True
+    )
     invalid_message_try_again = get_message(
         "invalid_message_try_again", language, msg=message, with_format=True
     )
     send_password_message = get_message(
         "send_new_password_message" if is_new_password else "send_password_message",
         language=language,
-        msg=message, with_format=True
+        msg=message,
+        with_format=True,
     )
     text = parse_text(message.text)
     if text:
@@ -374,7 +377,8 @@ def get_username_and_password(
     send_username_message = get_message(
         "send_new_username_message" if new else "send_username_message",
         language=language,
-        msg=message, with_format=True
+        msg=message,
+        with_format=True,
     )
 
     msg = BOT.send_message(chat_id, send_username_message)
@@ -406,7 +410,10 @@ def register(message: types.Message, language: str, unique_code: str) -> None:
         BOT.reply_to(
             message,
             get_message(
-                message_name="invalid_registration", language=language, msg=message, with_format=True
+                message_name="invalid_registration",
+                language=language,
+                msg=message,
+                with_format=True,
             ),
         )
 
@@ -479,7 +486,9 @@ def login_(
             telegram_id=tele_user.id,
         )
         is_admin = Plan.get(Plan.name == user.plan_name).is_admin
-        login_successful = get_message("login_successful", language=language, msg=msg_, with_format=True)
+        login_successful = get_message(
+            "login_successful", language=language, msg=msg_, with_format=True
+        )
         if not user.language:
             language_message(msg_, language)
 
@@ -517,6 +526,8 @@ def logout(message: types.Message, session: Session, language: str) -> None:
         session (Session): الجلسة المراد مسحها
         language (str): لغة الرسائل
     """
-    logout_successful = get_message("logout_successful", language=language, msg=message, with_format=True)
+    logout_successful = get_message(
+        "logout_successful", language=language, msg=message, with_format=True
+    )
     session.delete_instance()
     BOT.send_message(message.chat.id, logout_successful)
