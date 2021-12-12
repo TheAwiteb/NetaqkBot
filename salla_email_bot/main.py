@@ -79,6 +79,19 @@ def private_command_handler(message: types.Message) -> None:
                     "not_in_session", language=language, msg=message, with_format=True
                 ),
             )
+    elif command == "reset_password":
+        # اعادة تعيين كلمة المرور
+        if session:
+            utils.reset_password(
+                chat_id, session.user.id, language=language, check_password=True
+            )
+        else:
+            BOT.reply_to(
+                message,
+                utils.get_message(
+                    "not_in_session", language=language, msg=message, with_format=True
+                ),
+            )
     elif command == "about":
         # ارسال النبذة
         pass
@@ -112,6 +125,7 @@ def query_language(query: types.CallbackQuery) -> None:
             message_name="get_language_successful", language=language
         )
         session.user.language = language
+        session.user.save()
         BOT.edit_message_reply_markup(chat_id, message_id, reply_markup=None)
         BOT.edit_message_text(get_language_successful, chat_id, message_id)
 
