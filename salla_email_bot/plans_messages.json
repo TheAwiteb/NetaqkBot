@@ -28,7 +28,7 @@
             "send_password_message":"الرجاء ادخال كلمة المرور",
             "send_new_username_message":"الرجاء ادخال اسم المستخدم الجديد",
             "send_new_password_message":"الرجاء ادخال كلمة المرور الجديدة",
-            "change_language_message":"ااختار اللغة من الاسفل",
+            "change_language_message":"اختار اللغة من الاسفل",
             "create_account_successful":"تم انشاء الحساب بنجاح يمكنك تسجيل الدخول الان /login\nاسم المستخدم هو {}",
             "already_exists_username":"اسم المستخدم هذا مستخدم بالفعل",
             "get_language_successful":"تم التغير بنجاح الى اللغة العربية",
@@ -38,10 +38,13 @@
             "password_special_error":"عدد الرموز المميزة يجب ان تكون اكبر من او يساوي {}",
             "similar_password_to_username_error": "كلمة المرور واسم المستخدم متشابهين",
             "invalid_password_try_again":"كلمة مرور غير صحيحة حاول مجددا",
+            "invalid_password":"كلمة مرور غير صحيحة",
+            "password_reset_successful":"تم اعادة تعيين كلمة المرور بنجاح",
             "invalid_password_or_username":"كلمة المرور او اسم المستخدم غير صحيحين",
             "in_session":"انت في جلسة حقا في هذا المستخدم #username",
-            "not_in_session":"انت لست في جلسة حقا",
+            "not_in_session":"انت لست في جلسة",
             "login_successful":"تم تسجيل الدخول بنجاح بهذا المستخدم #username",
+            "unknown_user_message":"هذا المستخدم غير معروف",
             "logout_successful":"تم تسجيل الخروج بنجاح من هذا المستخدم #username"
         },
         "en": {
