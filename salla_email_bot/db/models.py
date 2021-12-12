@@ -63,7 +63,7 @@ class Url(Model):
         "reset_password",
     ]
 
-    unique_code = CharField(null=False)
+    unique_code = CharField(null=False, unique=True)
     url_type = CharField(null=False, choices=urls_type)
     plan_name = CharField(null=True)  # for register
     username = CharField(null=True)  # for reset password
