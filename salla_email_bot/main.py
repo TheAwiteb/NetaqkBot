@@ -48,7 +48,8 @@ def private_command_handler(message: types.Message) -> None:
                 utils.get_message(
                     message_name="admin_start" if is_admin else "start",
                     language=language,
-                    msg=message,
+                    msg=message, with_format=True
+                    
                 ),
             )
     elif command == "help":
@@ -61,7 +62,7 @@ def private_command_handler(message: types.Message) -> None:
         else:
             # اظهار رسالة خطأ لوجوده في جلسة
             BOT.reply_to(
-                message, utils.get_message("in_session", language=language, msg=message)
+                message, utils.get_message("in_session", language=language, msg=message, with_format=True)
             )
     elif command == "logout":
         if session:
@@ -69,7 +70,10 @@ def private_command_handler(message: types.Message) -> None:
             utils.logout(message, session, language)
         else:
             # اظهار رسالة خطأ لعدم وجوده في جلسة
-            BOT.reply_to(message, utils.get_message("not_in_session", language=language, msg=message))
+            BOT.reply_to(
+                message,
+                utils.get_message("not_in_session", language=language, msg=message, with_format=True),
+            )
     elif command == "about":
         # ارسال النبذة
         pass
