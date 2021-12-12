@@ -66,7 +66,7 @@ class Url(Model):
     unique_code = CharField(null=False, unique=True)
     url_type = CharField(null=False, choices=urls_type)
     plan_name = CharField(null=True)  # for register
-    username = CharField(null=True)  # for reset password
+    user_id = IntegerField(null=True)  # for reset password
     using_limit = IntegerField(
         null=False, default=1
     )  # for register you can put more than one
