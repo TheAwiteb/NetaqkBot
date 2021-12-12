@@ -230,7 +230,11 @@ def language_message(message: types.Message, language: str) -> str:
 
 
 def get_password_process(
-    message: types.Message, function_, language: str, **kwargs
+    message: types.Message,
+    function_,
+    language: str,
+    check_password: bool = False,
+    **kwargs,
 ) -> None:
     cancel_message = get_message(
         "cancel_message", language, msg=message, with_format=True
@@ -238,16 +242,42 @@ def get_password_process(
     invalid_message_try_again = get_message(
         "invalid_message_try_again", language, msg=message, with_format=True
     )
+    invalid_password_try_again = get_message(
+        "invalid_password_try_again",
+        language,
+    )
     text = parse_text(message.text)
     if text:
         if text != "/cancel":
             # كلمة مرور صحيحة
-            BOT.delete_message(message.chat.id, message.id)
-            function_(
-                password=(text, sha256(text.encode("utf-8")).hexdigest()),
-                language=language,
-                **kwargs,
-            )
+            if (
+                not (
+                    error_message := test_password(
+                        password=text,
+                        username=kwargs.get("username", None),
+                        language=language,
+                    )
+                )
+                or not check_password
+            ):
+                BOT.delete_message(message.chat.id, message.id)
+                function_(
+                    password=(text, sha256(text.encode("utf-8")).hexdigest()),
+                    language=language,
+                    **kwargs,
+                )
+            else:
+                msg = BOT.reply_to(
+                    message, f"{invalid_password_try_again}\n{error_message}"
+                )
+                BOT.register_next_step_handler(
+                    msg,
+                    get_password_process,
+                    language=language,
+                    function_=function_,
+                    check_password=check_password,
+                    **kwargs,
+                )
         else:
             # اذا تم الغاء العملية
             BOT.reply_to(message, cancel_message)
@@ -255,55 +285,37 @@ def get_password_process(
         # اذا كان المدخل ليس نص
         msg = BOT.reply_to(message, invalid_message_try_again)
         BOT.register_next_step_handler(
-            msg, get_password_process, language=language, function_=function_, **kwargs
+            msg,
+            get_password_process,
+            language=language,
+            function_=function_,
+            check_password=check_password,
+            **kwargs,
         )
 
 
 def register_(
     username: str, password: Tuple[str, str], url: Url, language: str, user_chat_id: str
 ):
-    invalid_password_try_again = get_message(
-        "invalid_password_try_again",
-        language,
-    )
     create_successful_message = get_message(
         message_name="create_account_successful", language=language
     ).format(username)
     if not User.get_or_none(User.username == username):
-        if not (
-            error_message := test_password(
-                password=password[0], username=username, language=language
-            )
-        ):
-            if Url.get_or_none(Url.unique_code == url.unique_code):
-                User.create(
-                    username=username,
-                    plan_name=url.plan_name,
-                    password=password[1],  # hashed password from @ get_password_process
-                )
-                BOT.send_message(user_chat_id, create_successful_message)
-
-                if (url.using_limit - 1) == 0:
-                    url.delete_instance()
-            else:
-                BOT.send_message(
-                    user_chat_id,
-                    get_message(
-                        "invalid_registration", language=language, with_format=True
-                    ),
-                )
-        else:
-            msg = BOT.send_message(
-                user_chat_id, f"{invalid_password_try_again}\n{error_message}"
-            )
-            BOT.register_next_step_handler(
-                msg,
-                get_password_process,
-                language=language,
-                function_=register_,
-                url=url,
+        if Url.get_or_none(Url.unique_code == url.unique_code):
+            User.create(
                 username=username,
-                user_chat_id=user_chat_id,
+                plan_name=url.plan_name,
+                password=password[1],  # hashed password from @ get_password_process
+            )
+            BOT.send_message(user_chat_id, create_successful_message)
+            if (url.using_limit - 1) == 0:
+                url.delete_instance()
+        else:
+            BOT.send_message(
+                user_chat_id,
+                get_message(
+                    "invalid_registration", language=language, with_format=True
+                ),
             )
     else:
         already_exists_message = get_message(
@@ -382,7 +394,6 @@ def get_username_and_password(
     )
 
     msg = BOT.send_message(chat_id, send_username_message)
-    kwargs.update({"function_": func})
     BOT.register_next_step_handler(
         msg,
         get_username_process,
@@ -390,6 +401,9 @@ def get_username_and_password(
         language,
         True,
         new,
+        # get_password_process kwargs
+        function_=func,
+        # function_ kwargs
         **kwargs,
     )
 
@@ -401,6 +415,7 @@ def register(message: types.Message, language: str, unique_code: str) -> None:
             language=language,
             new=True,
             func=register_,
+            check_password=True,
             # register_ kwargs
             url=url,
             user_chat_id=message.chat.id,
@@ -512,7 +527,7 @@ def login(message: types.Message, language: str) -> None:
         message=message,
         language=language,
         new=False,
-        # lognin_ kwargs
+        # lognin_ kwargsJ
         tele_user=user,
         msg_=message,
     )
@@ -531,3 +546,106 @@ def logout(message: types.Message, session: Session, language: str) -> None:
     )
     session.delete_instance()
     BOT.send_message(message.chat.id, logout_successful)
+
+
+def set_new_password(
+    user_chat_id: str, user: User, password: Tuple[str, str], language: str
+) -> None:
+    """وضح الباسورد للمستخدم
+
+    المعطيات:
+        user_chat_id (str): الشات الخاصة بالمستخدم
+        user (User): المستخدم
+        password (Tuple[str, str]): كلمة المرور الجديدة
+        language (str): لغة الرسائل
+    """
+    password_reset_successful = get_message(
+        "password_reset_successful", language=language
+    )
+    unknown_user_message = get_message(
+        "unknown_user_message", language=language, with_format=True
+    )
+
+    user = User.get_or_none(User.id == user.id)
+    if user:
+        user.password = password[1]
+        user.save()
+        BOT.send_message(user_chat_id, password_reset_successful)
+    else:
+        BOT.send_message(user_chat_id, unknown_user_message)
+
+
+def _reset_password(
+    user_chat_id: str,
+    user: User,
+    language: str,
+    password: Optional[Tuple[str, str]] = None,
+) -> None:
+
+    invalid_password_message = get_message("invalid_password", language=language)
+    send_new_password_message = get_message(
+        "send_new_password_message", language=language
+    )
+    unknown_user_message = get_message(
+        "unknown_user_message", language=language, with_format=True
+    )
+
+    user = User.get_or_none(User.id == user.id)
+    if user:
+        if password:
+            if user.password == password[1]:
+                pass
+            else:
+                BOT.send_message(user_chat_id, invalid_password_message)
+                return  # عدم استكمال التغير بالاسفل لان كلمة المرور غير متطابقة
+        msg = BOT.send_message(user_chat_id, send_new_password_message)
+        BOT.register_next_step_handler(
+            msg,
+            get_password_process,
+            function_=set_new_password,
+            language=language,
+            check_password=True,
+            # set_new_password kwargs
+            user=user,
+            user_chat_id=user_chat_id,
+        )
+    else:
+        BOT.send_message(user_chat_id, unknown_user_message)
+
+
+def reset_password(
+    chat_id: str, user_id: int, language: str, check_password: bool
+) -> None:
+    """اعادة تعين كلمة المرور
+
+    المعطيات:
+        chat_id (str): الشات الذي يتم التحقق فيه
+        user_id (int): ايدي المستخدم (في قاعدة االبيانات وليس في التيليقرام)
+        language (str): لغة الرسائل
+        check_password (bool): التحقق من كلمة المرور القديمة قبل اعادة التعيين ام لا
+    """
+    user = User.get_or_none(User.id == user_id)
+    unknown_user_message = get_message(
+        "unknown_user_message", language=language, with_format=True
+    )
+    send_password_message = get_message(
+        "send_password_message",
+        language=language,
+        with_format=True,
+    )
+    if user:
+        if check_password:
+            msg = BOT.send_message(chat_id, send_password_message)
+            BOT.register_next_step_handler(
+                msg,
+                get_password_process,
+                function_=_reset_password,
+                language=language,
+                # _reset_password kwargs
+                user_chat_id=chat_id,
+                user=user,
+            )
+        else:
+            _reset_password(chat_id, user, language, password=None)
+    else:
+        BOT.send_message(chat_id, unknown_user_message)
