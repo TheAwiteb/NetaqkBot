@@ -39,8 +39,15 @@ def private_command_handler(message: types.Message) -> None:
     url_args = args.split("spss")
 
     if command == "start":
-        if len(url_args) >= 2 and "register" == url_args[0]:
-            utils.register(message=message, language=language, unique_code=url_args[1])
+        if len(url_args) >= 2:
+            if "register" == url_args[0]:
+                utils.register(
+                    message=message, language=language, unique_code=url_args[1]
+                )
+            elif "reset_password" == url_args[0]:
+                utils.reset_from_url(
+                    message, language=language, unique_code=url_args[1]
+                )
         else:
             # رسالة البداية
             BOT.reply_to(

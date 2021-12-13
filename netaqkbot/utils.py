@@ -677,3 +677,28 @@ def reset_password(
             _reset_password(chat_id, user, language, password=None)
     else:
         BOT.send_message(chat_id, unknown_user_message)
+
+
+def reset_from_url(message: types.Message, language: str, unique_code: str) -> None:
+    """تعين كلمة المرور من الرابط
+
+    المعطيات:
+        message (types.Message): الرسالة
+        language (str): اللغة
+        unique_code (str): رمز الرابط
+    """
+    password_reset_message = get_message("password_reset_message", language=language)
+    unknown_user_message = get_message(
+        "unknown_user_message", language=language, with_format=True
+    )
+    if url := Url.get_or_none(Url.unique_code == unique_code):
+        if user := User.get_or_none(User.id == url.user_id):
+            BOT.reply_to(message, password_reset_message.format(username=user.username))
+            reset_password(message.chat.id, url.user_id, language, check_password=False)
+        else:
+            BOT.reply_to(message, unknown_user_message)
+    else:
+        BOT.reply_to(
+            message,
+            get_message("invalid_reset_password", language=language, with_format=True),
+        )
