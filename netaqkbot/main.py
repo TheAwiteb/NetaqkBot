@@ -70,7 +70,7 @@ def private_command_handler(message: types.Message) -> None:
     elif command == "logout":
         if session:
             # مسح الجلسة
-            utils.logout(message, session, language)
+            utils.logout(session=session, language=language)
         else:
             # اظهار رسالة خطأ لعدم وجوده في جلسة
             BOT.reply_to(
