@@ -8,6 +8,7 @@ from difflib import SequenceMatcher
 from config import (
     BOT,
     bot_username,
+    telegram_url,
     password_policy,
     length,
     uppercase,
@@ -409,9 +410,16 @@ def get_username_and_password(
 
 
 def register(message: types.Message, language: str, unique_code: str) -> None:
-    registration_plan_message = get_message("registration_plan", language=language, with_format=False)
+    registration_plan_message = get_message(
+        "registration_plan", language=language, with_format=False
+    )
     if url := Url.get_or_none(Url.unique_code == unique_code):
-        plan_name = get_message(f"{url.plan_name}_plan", language=language, with_format=False)
+        plan_name = get_message(
+            # plan name in json file is `free|admin|silver|.._plan`
+            f"{url.plan_name}_plan",
+            language=language,
+            with_format=False,
+        )
         BOT.reply_to(message, registration_plan_message.format(plan_name=plan_name))
         get_username_and_password(
             message=message,
@@ -439,7 +447,7 @@ def register(message: types.Message, language: str, unique_code: str) -> None:
 def create_url(
     url_type: str,
     plan_name: Optional[str] = None,
-    username: Optional[str] = None,
+    user_id: Optional[int] = None,
     using_limit: int = 1,
 ) -> str:
     """انشاء رابط للتسجيل او لاعادة تعين كلمة المرور
@@ -447,7 +455,7 @@ def create_url(
     المعطيات:
         url_type (str): نوع الرابط المراد انشائه تسجيل او اعادة تعين كلمة المرور (reset_password, register)
         plan_name (Optional[str]): نوع الخطة ( يتم استخدامه في التسجيل )
-        username (Optional[str]): اسم المستخدم المراد اعادة تعين كلمة المرور الخاصة به
+        user_id (Optional[int]): ايدي المستخدم المراد اعادة تعين كلمة المرور الخاصة به
         using_limit (Optional[int]): عدد مرات استخدام رابط التسحيل
 
     المخرجات:
@@ -459,13 +467,13 @@ def create_url(
             if not Url.get_or_none(Url.unique_code == unique_code):
                 break
 
-        url = f"https://telegram.me/{bot_username}?start={url_type}spss{unique_code}"
+        url = f"{telegram_url}{bot_username}?start={url_type}spss{unique_code}"
 
         Url.create(
             unique_code=unique_code,
             url_type=url_type,
             plan_name=plan_name,
-            username=username,
+            user_id=user_id,
             using_limit=using_limit,
         )
         return url
@@ -536,19 +544,34 @@ def login(message: types.Message, language: str) -> None:
     )
 
 
-def logout(message: types.Message, session: Session, language: str) -> None:
+def _logout(session: Session, language: str) -> None:
     """مسح الجلسة
 
-    المعطيات:
-        message (types.Message): الرسالة
+    Args:
         session (Session): الجلسة المراد مسحها
-        language (str): لغة الرسائل
+        language (str): اللغة لكي يتم ارسال رسالة المسح
     """
     logout_successful = get_message(
-        "logout_successful", language=language, msg=message, with_format=True
+        "logout_successful", language=language, with_format=True
     )
-    session.delete_instance()
-    BOT.send_message(message.chat.id, logout_successful)
+    if Session.get_or_none(Session.id == session.id):
+        session.delete_instance()
+        BOT.send_message(session.telegram_id, logout_successful)
+
+
+def logout(
+    language: str, session: Optional[Session] = None, user_id: Optional[int] = None
+) -> None:
+    """مسح الجلسة اذا تم تمريرها او جميع الجلسات الخاصة بالمستخدم اذ لم يتم تمرير الجلسة
+
+    المعطيات:
+        session (Session, optional): الجلسة المراد مسحها
+        user_id (int, optional): ايدي الشخص المراد مسح جميع جلساته
+        language (str): لغة الرسائل
+    """
+    sessions = [session] if session else Session.filter(Session.user_id == user_id)
+    for session in sessions:
+        _logout(session=session, language=language)
 
 
 def set_new_password(
@@ -573,6 +596,8 @@ def set_new_password(
     if user:
         user.password = password[1]
         user.save()
+        # مسح جميع الجلسات الخاصة بالمستخدم
+        logout(user_id=user.id, language=language)
         BOT.send_message(user_chat_id, password_reset_successful)
     else:
         BOT.send_message(user_chat_id, unknown_user_message)
