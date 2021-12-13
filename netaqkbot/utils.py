@@ -409,7 +409,10 @@ def get_username_and_password(
 
 
 def register(message: types.Message, language: str, unique_code: str) -> None:
+    registration_plan_message = get_message("registration_plan", language=language, with_format=False)
     if url := Url.get_or_none(Url.unique_code == unique_code):
+        plan_name = get_message(f"{url.plan_name}_plan", language=language, with_format=False)
+        BOT.reply_to(message, registration_plan_message.format(plan_name=plan_name))
         get_username_and_password(
             message=message,
             language=language,

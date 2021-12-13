@@ -14,7 +14,7 @@
             "silver_plan":"فضية",
             "golden_plan":"ذهبية",
             "diamond_plan":"ماسية",
-            "admin_plan":"ادمن",
+            "admin_plan":"الادمنية",
             "plan_button":"الخطة",
             "get_url_button":"ارسال الرابط",
             "statistics_button":"الاحصائيات",
@@ -44,8 +44,9 @@
             "in_session":"انت في جلسة حقا في هذا المستخدم #username",
             "not_in_session":"انت لست في جلسة",
             "login_successful":"تم تسجيل الدخول بنجاح بهذا المستخدم #username",
+            "logout_successful":"تم تسجيل الخروج بنجاح من هذا المستخدم #username",
             "unknown_user_message":"هذا المستخدم غير معروف",
-            "logout_successful":"تم تسجيل الخروج بنجاح من هذا المستخدم #username"
+            "registration_plan":"لقد تم التعرف على رمز التسجيل، الباقة الخاصة بك هي باقة {plan_name}.\nتابع خطوات انشاء الحساب بالاسفل"
         },
         "en": {
             "start":"start message",
