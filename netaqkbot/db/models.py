@@ -9,7 +9,7 @@ class User(Model):
         database = db
 
     username = CharField(null=False, unique=True)
-    password = CharField(null=True, default=None)
+    password = CharField(null=False)
     # اللغة التي سوف يرسل بها البوت
     language = CharField(null=True, max_length=3)
     plan_name = CharField(null=False)
