@@ -1,3 +1,4 @@
+from peewee import IntegrityError
 from telebot import types, util
 from typing import Optional, Tuple
 from random import choice
@@ -30,12 +31,14 @@ def set_commands(commands: dict) -> None:
     [
         # تنويه: تم تحويل المجال الخاص بالامر الى كائن وهو في ملف التهيئة عبارة عن كلاس
         BOT.set_my_commands(
-            commands.get(language).get(scope),
+            commands.get(language).get(
+                scope
+            ),  # وضع الاوامر الخاصة باللغة في السكوب المعين (تم جلبها من اللوب بالاسفل)
             scope(),
             None if language == "-" else language,
         )
-        for language in commands
-        for scope in commands.get(language).keys()
+        for language in commands  # جلب اللغة
+        for scope in commands.get(language).keys()  # جلب السكوبات الخاصة باللغة
     ]
 
 
@@ -62,7 +65,7 @@ def parse_text(text: Optional[str] = None) -> Optional[str]:
     return None
 
 
-def format_message(message: Optional[types.Message], text: str) -> str:
+def format_message(text: str, message: Optional[types.Message] = None) -> str:
     """اضافة المتغيرات الموجودة بالرسالة ان وجد
 
     المعطيات:
@@ -110,8 +113,8 @@ def get_message(
     المعطيات:
         message_name (str): اسم الرسالة المراد جلبها
         language (str): لغة الرسالة المراد جلبها
-        msg (Optional[types.Message]): اخذ المتغيرات من الرسالة لعمل فورمات على الرسالة المخرجة
-        with_format (bool, optional): اذا كنت تريد عمل فورمات ام لا
+        msg (Optional[types.Message]): الرسالة المراد استخراج منها المتغيرات (ااذا كانت قيمتها فارغة سوف يتم تبديل المتغرات بـ '')
+        with_format (bool, optional): اذا كنت تريد عمل فورمات ام لا (يجب جعلها قيمة صحيح اذا كنت تريد تحويل اسم المتغيرات الى نص فارغ )
 
     الاخطأ:
         Exception: الرسالة ليست موجودة
@@ -123,11 +126,10 @@ def get_message(
         Message.message_name == message_name, Message.language == language
     )
     if message:
-        # يتم عمل فورمات للرسالة اذا تم ادخال الرسالة المراد اخذ المتغيرات منها
         return (
-            format_message(message=msg, text=message.message)
-            if with_format
-            else message.message
+            format_message(message=msg, text=message.message)  # عمل فورمات
+            if with_format  # اذا تم طلب ذالك
+            else message.message  # ارجاع الرسالة كما هي
         )
     else:
         raise Exception(f"'{message_name}' not found")
@@ -149,7 +151,7 @@ def is_similar(username: str, password: str) -> bool:
 def test_password(
     password: str, language: str, username: Optional[str] = None
 ) -> Optional[str]:
-    """اختبار قوة كلمة المرور يتم ارجاع نص يحتوي الاخطاء او قيمة فارغة في حال عددم وجود اخطأ
+    """اختبار قوة كلمة المرور يتم ارجاع نص يحتوي الاخطاء او قيمة فارغة في حال عدم وجود اخطأ
 
     المعطيات:
         username (Optional[str], optional): اسم المستخدم المراد مقارنة كلمة المرور به
@@ -161,6 +163,7 @@ def test_password(
     """
     error_text = ""
     similar = is_similar(username, password) if username else False
+    # اذ كان هناك اخطأ او تطابق كلمة المرور مع اسم المستخدم
     if (failed_tests := password_policy.test(password)) or similar:
         failed_tests = [type(f) for f in failed_tests]
         password_length_error = (
@@ -189,13 +192,14 @@ def test_password(
             error_text += f"{password_numbers_error}\n"
         if tests.Special in failed_tests:
             error_text += f"{password_special_error}\n"
+    # None اذا كان النص فارغ (عدم وجود اخطأ) يتم ارجاع
     return error_text or None
 
 
 def open_home_page(
     chat_id: str, language: str, is_admin: bool, message_id: Optional[int] = None
 ) -> None:
-    """فتح الصفحة الرئيسية
+    """ارسال رسالة الصفحة الرئيسية او تعديل رسالة موجودة اذ تم اسناد ايدي الرسالة
 
     المعطيات:
         chat_id (str): المحادثة المراد ارسال الصفحة الرئيسية بها
@@ -221,13 +225,14 @@ def open_home_page(
         BOT.send_message(chat_id, home_page_message, reply_markup=keybord)
 
 
-def language_message(message: types.Message, language: str) -> str:
+def language_message(chat_id: str, language: str) -> str:
+    # TODO: update this function to process
     from tele_keybord.keybords import language_keybord
 
     change_language_message = get_message("change_language_message", language=language)
 
     keybord = language_keybord()
-    BOT.send_message(message.chat.id, change_language_message, reply_markup=keybord)
+    BOT.send_message(chat_id, change_language_message, reply_markup=keybord)
 
 
 def get_password_process(
@@ -237,6 +242,20 @@ def get_password_process(
     check_password: bool = False,
     **kwargs,
 ) -> None:
+    """الخاص بالدالة kwargs اخذ كلمة المرور من المستخدم وادخالها في دالة مع ال امكانية اضافة الـ
+
+    المعطيات:
+        message (types.Message): الرسالة
+        function_ (function): الدالة المراد ادخال كلمة المرور فيها
+        language (str): اللغة
+        check_password (bool, optional): التحقق من قوة كلمة المرور واذا ضعيفة يتم طلب اخرى. Defaults to False.
+
+    تم وضع باراميتر التحقق لان الشروط ممكن تتغير في المستقبل
+    ولان يتم استخدام الدالة في تسجيل الدخول
+    مايصح اقوله ادخل كلمة مرور توافق الشروط الجديدة بسبب تحديث الشروط القديمة
+    True لهذه تكون قيمتها في انشاء الحساب بـ
+    False وقيمتها في تسجيل الدخول بـ
+    """
     cancel_message = get_message(
         "cancel_message", language, msg=message, with_format=True
     )
@@ -247,11 +266,14 @@ def get_password_process(
         "invalid_password_try_again",
         language,
     )
+
     text = parse_text(message.text)
     if text:
+        # اذا كان المدخل نص
         if text != "/cancel":
             # كلمة مرور صحيحة
             if (
+                # اذا كان هناك اخطأ (مخرج الدالة نص)
                 not (
                     error_message := test_password(
                         password=text,
@@ -259,6 +281,7 @@ def get_password_process(
                         language=language,
                     )
                 )
+                # او لم يتم طلب التحقق
                 or not check_password
             ):
                 BOT.delete_message(message.chat.id, message.id)
@@ -277,6 +300,7 @@ def get_password_process(
                     language=language,
                     function_=function_,
                     check_password=check_password,
+                    # function_ kwargs
                     **kwargs,
                 )
         else:
@@ -298,19 +322,38 @@ def get_password_process(
 def register_(
     username: str, password: Tuple[str, str], url: Url, language: str, user_chat_id: str
 ):
+    """انشاء مستخدم
+
+    المعطيات:
+        username (str): اسم المستخدم
+        password (Tuple[str, str]): كلمة المرور
+        url (Url): رابط التسجيل
+        language (str): اللغة
+        user_chat_id (str): الشات الخاصة به
+    """
     create_successful_message = get_message(
         message_name="create_account_successful", language=language
     ).format(username)
-    if not User.get_or_none(User.username == username):
+    already_exists_username = get_message("already_exists_username", language=language, with_format=True)
+    # اذ لم يكن اسم المستخدم مستخدم من قبل
+    if not User.get_or_none(
+        User.username == username
+    ):  # دالة جلب اسم المستخدم ترجع حروف صغيرة
+        # اذا كان الرابط فعال بعد
         if Url.get_or_none(Url.unique_code == url.unique_code):
-            User.create(
-                username=username,
-                plan_name=url.plan_name,
-                password=password[1],  # hashed password from @ get_password_process
-            )
-            BOT.send_message(user_chat_id, create_successful_message)
-            if (url.using_limit - 1) == 0:
-                url.delete_instance()
+            try:
+                User.create(
+                    username=username,
+                    plan_name=url.plan_name,
+                    password=password[1],  # hashed password from @ get_password_process
+                )
+                BOT.send_message(user_chat_id, create_successful_message)
+                if (url.using_limit - 1) == 0:
+                    # مسح الرابط اذا تجاوز الحد الخاص به
+                    url.delete_instance()
+            except IntegrityError:
+                # اذا كان اسم المستخدم موجود بالفعل
+                BOT.send_message(user_chat_id, already_exists_username)
         else:
             BOT.send_message(
                 user_chat_id,
@@ -319,6 +362,7 @@ def register_(
                 ),
             )
     else:
+        # اسم المستخدم مستخدم من قبل
         already_exists_message = get_message(
             message_name="already_exists_username", language=language
         )
@@ -329,34 +373,36 @@ def get_username_process(
     message: types.Message,
     function,
     language: str,
-    func_is_password: bool,
-    is_new_password: bool,
+    func_is_process: bool,
+    process_message: str = None,
     **kwargs,
 ) -> None:
+    """جلب اسم المستخدم وادخاله في دالة اخرى (يتم تحويله الى حروف صغيرة)
 
+    المعطيات:
+        message (types.Message): الرسالة
+        function (function): الدالة المراد ادخال اسم المستخدم لها
+        language (str): اللغة
+        func_is_process (bool): هل الدالة بروسيس
+        process_message (str, optional): رسالة البروسيس اذا كان موجود
+    """
     cancel_message = get_message(
         "cancel_message", language, msg=message, with_format=True
     )
     invalid_message_try_again = get_message(
         "invalid_message_try_again", language, msg=message, with_format=True
     )
-    send_password_message = get_message(
-        "send_new_password_message" if is_new_password else "send_password_message",
-        language=language,
-        msg=message,
-        with_format=True,
-    )
     text = parse_text(message.text)
     if text:
         if text != "/cancel":
             # اسم مستخدم صحيح
-            if func_is_password:
-                msg = BOT.reply_to(message, send_password_message)
+            if func_is_process:
+                msg = BOT.reply_to(message, process_message)
                 BOT.register_next_step_handler(
-                    msg, function, username=text, language=language, **kwargs
+                    msg, function, username=text.lower(), language=language, **kwargs
                 )
             else:
-                function(username=text.lower(), language=language ** kwargs)
+                function(username=text.lower(), language=language, **kwargs)
         else:
             # اذا تم الغاء العملية
             BOT.reply_to(message, cancel_message)
@@ -368,8 +414,8 @@ def get_username_process(
             get_username_process,
             function,
             language,
-            func_is_password,
-            is_new_password,
+            func_is_process,
+            process_message,
             **kwargs,
         )
 
@@ -393,15 +439,21 @@ def get_username_and_password(
         msg=message,
         with_format=True,
     )
-
+    send_password_message = get_message(
+        "send_new_password_message" if new else "send_password_message",
+        language=language,
+        msg=message,
+        with_format=True,
+    )
     msg = BOT.send_message(chat_id, send_username_message)
     BOT.register_next_step_handler(
         msg,
         get_username_process,
+        # get_username_process args
         get_password_process,
         language,
         True,
-        new,
+        send_password_message,
         # get_password_process kwargs
         function_=func,
         # function_ kwargs
@@ -410,10 +462,18 @@ def get_username_and_password(
 
 
 def register(message: types.Message, language: str, unique_code: str) -> None:
+    """ انشاء مستخدم جديد بعد طلب اسم المستخدم وكلمة المرور منه
+
+    المعطيات:
+        message (types.Message): رسالة
+        language (str): [description]
+        unique_code (str): [description]
+    """ """"""
     registration_plan_message = get_message(
         "registration_plan", language=language, with_format=False
     )
     if url := Url.get_or_none(Url.unique_code == unique_code):
+        # رقم التسجيل صحيح
         plan_name = get_message(
             # plan name in json file is `free|admin|silver|.._plan`
             f"{url.plan_name}_plan",
@@ -433,6 +493,7 @@ def register(message: types.Message, language: str, unique_code: str) -> None:
         )
 
     else:
+        # رقن التسجيل غير صحيح
         BOT.reply_to(
             message,
             get_message(
@@ -450,18 +511,19 @@ def create_url(
     user_id: Optional[int] = None,
     using_limit: int = 1,
 ) -> str:
-    """انشاء رابط للتسجيل او لاعادة تعين كلمة المرور
+    """انشاء رابط للتسجيل او لاعادة تعيين كلمة المرور
 
     المعطيات:
         url_type (str): نوع الرابط المراد انشائه تسجيل او اعادة تعين كلمة المرور (reset_password, register)
         plan_name (Optional[str]): نوع الخطة ( يتم استخدامه في التسجيل )
-        user_id (Optional[int]): ايدي المستخدم المراد اعادة تعين كلمة المرور الخاصة به
+        user_id (Optional[int]): ايدي المستخدم المراد اعادة تعين كلمة المرور الخاصة به (االايدي في قاعدة البيانات وليس تيليجرام)
         using_limit (Optional[int]): عدد مرات استخدام رابط التسحيل
 
     المخرجات:
         str: الرابط
     """
     if url_type in ("reset_password", "register"):
+        # اذا كات النوع من ضمن الانواع المسموحة
         while True:
             unique_code = "".join(choice(hexdigits) for _ in range(5))
             if not Url.get_or_none(Url.unique_code == unique_code):
@@ -478,21 +540,21 @@ def create_url(
         )
         return url
     else:
+        # خطأ نوع غير معروف
         raise Exception(f"'{url_type}' invalid url type")
 
 
 def login_(
     username: str,
-    password: str,
+    password: Tuple[str, str],
     tele_user: types.User,
-    msg_: types.Message,
     language: str,
 ) -> None:
     """انشاء جلسة للمستخدم
 
     المعطيات:
         username (str): اسم المستخدم
-        password (str): كلمة المرور # هاش
+        password (Tuple[str, str]): كلمة المرور # هاش
         tele_user (types.User): المستخدم المراد عمل الجلسة له
         language (str): اللغة المراد عرض الرسائل بها
     """
@@ -500,10 +562,12 @@ def login_(
 
     user = User.get_or_none(User.username == username, User.password == password[1])
     invalid_password_or_username = get_message(
-        "invalid_password_or_username", language=language, msg=msg_, with_format=True
+        "invalid_password_or_username", language=language, with_format=True
     )
-    chat_id = msg_.chat.id
+    chat_id = tele_user.id
     if user:
+        # كلمة المرور صحيحة
+        # يتم انشاء الجلسة
         Session.create(
             user=user,
             telegram_username=tele_user.username,
@@ -513,10 +577,10 @@ def login_(
         )
         is_admin = Plan.get(Plan.name == user.plan_name).is_admin
         login_successful = get_message(
-            "login_successful", language=language, msg=msg_, with_format=True
+            "login_successful", language=language, with_format=True
         )
         if not user.language:
-            language_message(msg_, language)
+            language_message(chat_id, language) # TODO: register_callback_query_handler تعديل طريقة جلب اللغة وجعلها 
 
         BOT.send_message(
             chat_id, login_successful, reply_markup=start_keybord(is_admin, language)
@@ -538,16 +602,15 @@ def login(message: types.Message, language: str) -> None:
         message=message,
         language=language,
         new=False,
-        # lognin_ kwargsJ
+        # lognin_ kwargs
         tele_user=user,
-        msg_=message,
     )
 
 
 def _logout(session: Session, language: str) -> None:
     """مسح الجلسة
 
-    Args:
+    المعطيات:
         session (Session): الجلسة المراد مسحها
         language (str): اللغة لكي يتم ارسال رسالة المسح
     """
@@ -609,7 +672,14 @@ def _reset_password(
     language: str,
     password: Optional[Tuple[str, str]] = None,
 ) -> None:
+    """ اعادة تعيين كلمة المرور، بعد التحقق من كلمة المرور القديمة اذا تم مريرها او بدون تحقق اذ لم يتم تمريرها
 
+    المعطيات:
+        user_chat_id (str): ايدي الدردشة
+        user (User): المستخدم المراد اعاة تعيين كلمة المرور الخاصة به
+        language (str): لغة الرسائل
+        password (Optional[Tuple[str, str]], optional): كلمة المرور اذا كنت تريد التحقق. Defaults to None.
+    """    
     invalid_password_message = get_message("invalid_password", language=language)
     send_new_password_message = get_message(
         "send_new_password_message", language=language
@@ -692,12 +762,16 @@ def reset_from_url(message: types.Message, language: str, unique_code: str) -> N
         "unknown_user_message", language=language, with_format=True
     )
     if url := Url.get_or_none(Url.unique_code == unique_code):
+        # اذا كان الرابط صحيح
         if user := User.get_or_none(User.id == url.user_id):
-            BOT.reply_to(message, password_reset_message.format(username=user.username))
+            # اذا كان اليوزر موجود
             reset_password(message.chat.id, url.user_id, language, check_password=False)
+            BOT.reply_to(message, password_reset_message.format(username=user.username))
         else:
+            # اذ لم يكن موجود
             BOT.reply_to(message, unknown_user_message)
     else:
+        # اذا كان الرابط غير صحيح
         BOT.reply_to(
             message,
             get_message("invalid_reset_password", language=language, with_format=True),

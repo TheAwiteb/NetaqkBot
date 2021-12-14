@@ -219,5 +219,5 @@ if __name__ == "__main__":
         except Exception as err:
             print(err)
             print("\nRerun bot after 10s")
-            time.sleep(10)
+            time.sleep(5)
             main()  # اعادة تشغيل البوت
