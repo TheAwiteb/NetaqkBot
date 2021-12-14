@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-db_name = os.environ.get("SQLITE_EMALIL_BOT") or "email_bot.sqlite3"
+db_name = os.environ.get("SQLITE_EMALIL_BOT") or "netaqk.db"
 
 db = SqliteDatabase(db_name, thread_safe=False, check_same_thread=False)
 
