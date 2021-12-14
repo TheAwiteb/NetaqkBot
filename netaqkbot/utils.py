@@ -225,8 +225,13 @@ def open_home_page(
         BOT.send_message(chat_id, home_page_message, reply_markup=keybord)
 
 
-def language_message(chat_id: str, language: str) -> str:
-    # TODO: update this function to process
+def language_message(chat_id: str, language: str) -> None:
+    """ارسال كيبورد اللغة الى دردشة (تتم معالجته في المف الرئيسي)
+
+    Args:
+        chat_id (str): الشات المراد ارسال له الكيبورد
+        language (str): اللغة
+    """
     from tele_keybord.keybords import language_keybord
 
     change_language_message = get_message("change_language_message", language=language)
@@ -334,7 +339,9 @@ def register_(
     create_successful_message = get_message(
         message_name="create_account_successful", language=language
     ).format(username)
-    already_exists_username = get_message("already_exists_username", language=language, with_format=True)
+    already_exists_username = get_message(
+        "already_exists_username", language=language, with_format=True
+    )
     # اذ لم يكن اسم المستخدم مستخدم من قبل
     if not User.get_or_none(
         User.username == username
@@ -580,8 +587,7 @@ def login_(
             "login_successful", language=language, with_format=True
         )
         if not user.language:
-            language_message(chat_id, language) # TODO: register_callback_query_handler تعديل طريقة جلب اللغة وجعلها 
-
+            language_message(chat_id, language)
         BOT.send_message(
             chat_id, login_successful, reply_markup=start_keybord(is_admin, language)
         )
@@ -672,14 +678,14 @@ def _reset_password(
     language: str,
     password: Optional[Tuple[str, str]] = None,
 ) -> None:
-    """ اعادة تعيين كلمة المرور، بعد التحقق من كلمة المرور القديمة اذا تم مريرها او بدون تحقق اذ لم يتم تمريرها
+    """اعادة تعيين كلمة المرور، بعد التحقق من كلمة المرور القديمة اذا تم مريرها او بدون تحقق اذ لم يتم تمريرها
 
     المعطيات:
         user_chat_id (str): ايدي الدردشة
         user (User): المستخدم المراد اعاة تعيين كلمة المرور الخاصة به
         language (str): لغة الرسائل
         password (Optional[Tuple[str, str]], optional): كلمة المرور اذا كنت تريد التحقق. Defaults to None.
-    """    
+    """
     invalid_password_message = get_message("invalid_password", language=language)
     send_new_password_message = get_message(
         "send_new_password_message", language=language
