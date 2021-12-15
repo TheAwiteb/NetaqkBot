@@ -17,6 +17,8 @@
             "admin_plan":"الادمنية",
             "plan_button":"الخطة",
             "get_url_button":"ارسال الرابط",
+            "using_limit":"عدد الاستخدام",
+            "send_url_message":"الرابط الخاص بالباقة الـ {} عدد مرات الاستخدام {}",
             "statistics_button":"الاحصائيات",
             "sessions_button":"الجلسات",
             "creat_user_button":"انشاء مستخدم",
@@ -48,7 +50,8 @@
             "unknown_user_message":"هذا المستخدم غير معروف",
             "registration_plan":"لقد تم التعرف على رمز التسجيل، الباقة الخاصة بك هي باقة {plan_name}.\nتابع خطوات انشاء الحساب بالاسفل",
             "invalid_reset_password":"عذرا رمز اعادة تعيين كلمة المرور غير صحيح تواصل مع الدعم الفني /help",
-            "password_reset_message":"تم التعرف على رمز اعادة تعيين كلمة المرور بنجاح، هذا الرمز لاعادة تعين كلمة مرور هذا الحساب {username}"
+            "password_reset_message":"تم التعرف على رمز اعادة تعيين كلمة المرور بنجاح، هذا الرمز لاعادة تعين كلمة مرور هذا الحساب {username}",
+            "create_user_page_message":".اختار باقة المستخدم الجديد ثم اضغط على {} لارسال الرابط"
         },
         "en": {
             "start":"start message",
