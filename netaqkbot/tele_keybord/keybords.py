@@ -1,23 +1,23 @@
 from telebot import types
-from typing import Optional
+from typing import Optional, List
 from utils import get_message
+from config import max_using_limit, plans
 
 
-def _quick_markup(values: dict, row_width: int) -> types.InlineKeyboardMarkup:
+def _quick_markup(rows: List[List[dict]]) -> types.InlineKeyboardMarkup:
     """صناعة كيبورد وارجاعه
 
     المعطيات:
-        values (dict): الازرار
-        row_width (int): عدد الاسطر
-
+        rows (List[dict]): مصفوفة تحتوي الاصفف وكل صف عبارة عن قاموس
     المخرجات:
         types.InlineKeyboardMarkup: الكيبورد
     """
-    markup = types.InlineKeyboardMarkup(row_width=row_width)
-    buttons = []
-    for text, kwargs in values.items():
-        buttons.append(types.InlineKeyboardButton(text, **kwargs))
-    markup.add(*buttons)
+    markup = types.InlineKeyboardMarkup()
+    for row in rows:
+        buttons = []
+        for button in row:
+            buttons.append(types.InlineKeyboardButton(text=button, **row.get(button)))
+        markup.add(*buttons)
     return markup
 
 
@@ -31,14 +31,17 @@ def start_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMarkup:
     المخرجات:
         types.InlineKeyboardMarkup: الكيبورد
     """
-    values = {}
-    row_width = 1
     home_page = "admin_home_page" if is_admin else "user_home_page"
-    values[get_message(home_page + "_button", language)] = {
-        "callback_data": f"to:{home_page}"
-    }
 
-    return _quick_markup(values, row_width)
+    rows = [
+        {
+            get_message(home_page + "_button", language): {
+                "callback_data": f"to:{home_page}"
+            }
+        }
+    ]
+
+    return _quick_markup(rows)
 
 
 def home_page_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMarkup:
@@ -48,48 +51,67 @@ def home_page_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMark
     creat_user_button = get_message("creat_user_button", language)
     settings_button = get_message("settings_button", language)
 
-    row_width = 3 if is_admin else 2
+    rows = []
 
-    values = {}
-    values[statistics_button] = {"callback_data": f"update:?"}  # TODO
-    values[sessions_button] = {"callback_data": f"update:?"}  # TODO
-    values[settings_button] = {"callback_data": f"update:?"}  # TODO
+    rows.append(
+        {
+            statistics_button: {"callback_data": f"update:?"},  # TODO
+            sessions_button: {"callback_data": f"update:?"},  # TODO
+            settings_button: {"callback_data": f"update:?"},  # TODO
+        }
+    )
     if is_admin:
-        values[creat_user_button] = {"callback_data": f"update:creat_user"}
+        rows.append({creat_user_button: {"callback_data": f"update:creat_user"}})
 
-    return _quick_markup(values, row_width)
+    return _quick_markup(rows)
 
 
 def create_user_keybord(
-    language: str, plan_number: Optional[int] = 0
+    language: str, plan_number: Optional[int] = 0, using_limit: Optional[int] = 0
 ) -> types.InlineKeyboardMarkup:
     plan_button = get_message("plan_button", language) + " 👇"
     get_url_button = get_message("get_url_button", language) + " 🔗"
+    using_limit_message = get_message("using_limit", language) + " 👇"
 
-    plans = [
-        get_message("free_plan", language),
-        get_message("bronze_plan", language),
-        get_message("silver_plan", language),
-        get_message("golden_plan", language),
-        get_message("diamond_plan", language),
-        get_message("admin_plan", language),
+    plans_ = [get_message(plan, language) for plan in plans]
+    plan_number = plan_number % len(plans_)
+    using_limit = using_limit % max_using_limit
+
+    rows = [
+        {plan_button: {"callback_data": f"print:{plan_button}"}},
+        {plans_[plan_number]: {"callback_data": f"print:{plans_[plan_number]}"}},
+        {
+            get_url_button: {
+                "callback_data": f"run:create_url:{plan_number} {using_limit}"
+            }
+        },
+        {
+            "⬅️": {
+                "callback_data": f"updatek:create_user:{plan_number-1} {using_limit}"
+            },
+            "➡️": {
+                "callback_data": f"updatek:create_user:{plan_number+1} {using_limit}"
+            },
+        },
+        {using_limit_message: {"callback_data": f"print:{using_limit_message}"}},
+        # if using_limit == 0, in button will be '♾'
+        {using_limit or "♾": {"callback_data": f"print:{using_limit or '♾'}"}},
+        {
+            "⬅️": {
+                "callback_data": f"updatek:create_user:{plan_number} {using_limit-1}"
+            },
+            "➡️": {
+                "callback_data": f"updatek:create_user:{plan_number} {using_limit+1}"
+            },
+        },
     ]
-    plan_number = plan_number % len(plans)
 
-    row_width = 4
-    values = {}
-    values[plan_button] = {"callback_data": f"print:{plan_button}"}
-    values[plans[plan_number]] = {"callback_data": f"print:{plans[plan_number]}"}
-    values[get_url_button] = {"callback_data": f"run:create_url:{plan_number}"}
-    values["⬅️"] = {"callback_data": f"updatek:create_user:{plan_number-1}"}
-    values["➡️"] = {"callback_data": f"updatek:create_user:{plan_number+1}"}
-
-    return _quick_markup(values, row_width)
+    return _quick_markup(rows)
 
 
 def language_keybord() -> types.InlineKeyboardMarkup:
-    row_width = 2
-    values = {}
-    values["العربية 🇸🇦"] = {"callback_data": "new_language=ar"}
-    values["EN 🇺🇸"] = {"callback_data": "new_language=en"}
-    return _quick_markup(values, row_width)
+    rows = [
+        {"العربية 🇸🇦": {"callback_data": "new_language=ar"}},
+        {"EN 🇺🇸": {"callback_data": "new_language=en"}},
+    ]
+    return _quick_markup(rows)
