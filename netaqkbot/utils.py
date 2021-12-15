@@ -16,6 +16,7 @@ from config import (
     numbers,
     special,
     similarity2username,
+    plans,
 )
 from db.models import Message, Url, User, Session, Plan
 
@@ -519,6 +520,7 @@ def create_url(
     using_limit: int = 1,
 ) -> str:
     """انشاء رابط للتسجيل او لاعادة تعيين كلمة المرور
+        اذا كنت تريد رابط دائم اجعل الحد 0
 
     المعطيات:
         url_type (str): نوع الرابط المراد انشائه تسجيل او اعادة تعين كلمة المرور (reset_password, register)
@@ -776,9 +778,39 @@ def reset_from_url(message: types.Message, language: str, unique_code: str) -> N
         else:
             # اذ لم يكن موجود
             BOT.reply_to(message, unknown_user_message)
+        url.delete_instance()
     else:
         # اذا كان الرابط غير صحيح
         BOT.reply_to(
             message,
             get_message("invalid_reset_password", language=language, with_format=True),
         )
+
+
+def send_url(
+    message: types.Message,
+    language: str,
+    url_type: str,
+    plan_number: Optional[int]=None,
+    user_id: Optional[int] = None,
+    using_limit: int = 1,
+):
+    """ارسال الرابط الى الدردشة
+
+    Args:
+        message (types.Message): الرسالة المراد اليها الرابط
+        url_type (str): نوع الرابط المراد ارساله
+        plan_number (int, optional): رقم الخطة
+        using_limit (int optional): عدد مرات استخدام رابط التسجيل default to 1.
+        user_id (int, optional): ايدي المستخدم المراد اعادة تعيين كلمة المرور الخاصة به في قاعدة البيانات وليس تيليقرام
+        language (str): اللغة
+    """
+    send_url_message = get_message("send_url_message", language=language)
+    plans_ = [get_message(plan, language) for plan in plans]
+    plan_name = plans[plan_number] if plan_number else None
+    url = create_url(url_type=url_type, plan_name=plan_name, using_limit=using_limit, user_id=user_id)
+    BOT.reply_to(
+        message,
+        f"{send_url_message.format(plans_[plan_number], using_limit or '♾')}\n<code>{url}</code>",
+        parse_mode="HTML",
+    )
