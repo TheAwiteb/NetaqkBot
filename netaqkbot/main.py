@@ -58,6 +58,9 @@ def private_command_handler(message: types.Message) -> None:
                     msg=message,
                     with_format=True,
                 ),
+                reply_markup=keybords.start_keybord(is_admin, language=language)
+                if session
+                else None,
             )
     elif command == "help":
         # رسالة المساعدة
@@ -163,14 +166,25 @@ def callback_handler(query: types.CallbackQuery):
         else:
             pass
     elif action == "run":
-        # معالجة تشغيل الدوال
-        pass
+        if callback[0] == "create_url":
+            plan_number, using_limit = [int(num) for num in callback[1].split()]
+            utils.send_url(
+                message=query.message,
+                url_type="register",
+                plan_number=plan_number,
+                using_limit=using_limit,
+                language=language,
+            )
+        BOT.answer_callback_query(query.id, "✅")
     elif action == "update":
         if callback[0] == "creat_user" and is_admin:
             create_user_page_message = utils.get_message(
                 message_name="create_user_page_message", language=language
             )
-            BOT.edit_message_text(create_user_page_message, chat_id, message_id)
+            get_url_button = utils.get_message("get_url_button", language)
+            BOT.edit_message_text(
+                create_user_page_message.format(get_url_button), chat_id, message_id
+            )
             BOT.edit_message_reply_markup(
                 chat_id,
                 message_id,
@@ -182,16 +196,18 @@ def callback_handler(query: types.CallbackQuery):
             pass
     elif action == "updatek":
         if callback[0] == "create_user":
-            plan_number = int(callback[1])
+            plan_number, using_limit = [int(num) for num in callback[1].split()]
             BOT.edit_message_reply_markup(
                 chat_id,
                 message_id,
                 reply_markup=keybords.create_user_keybord(
-                    language=language, plan_number=plan_number
+                    language=language, plan_number=plan_number, using_limit=using_limit
                 ),
             )
         else:
             pass
+    elif action == "print":
+        BOT.answer_callback_query(query.id, callback[0])
     else:
         pass
 
