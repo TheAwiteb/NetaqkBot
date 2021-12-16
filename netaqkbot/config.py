@@ -6,6 +6,7 @@ from os import environ
 from pathlib import Path
 from dotenv import load_dotenv
 from telebot import TeleBot
+from pyTelegramBotCAPTCHA import CaptchaManager, CaptchaOptions, CustomLanguage
 from telebot.types import (
     BotCommand,
     BotCommandScopeDefault,
@@ -42,6 +43,23 @@ plans = [
     "admin_plan",
 ]
 
+# تعديل بعض الحقول في اللغة الخاصة بالتحقق
+custom_language = CustomLanguage(
+    base_language="ar",
+    text="اهلا #USER عذرا لازعاجك ولكن لمتابعة تسجيل الدخول يجب التاكد من انك مستخدم حقيقي",
+)
+# تعريف اوبجكت الخيارات
+options = CaptchaOptions()
+options.generator = "keyzend"  # نوع منشئ الصور
+options.code_length = 4  # طول رسالة التحقق
+options.max_attempts = 4  # عدد المحاولات
+options.max_user_reloads = 4  # عدد تغير الصورة
+options.custom_language = custom_language  # اللغة (اللغة العربية موجودة بالفعل، ولكن تم تعديل رسالة التحقق اعلاه)
+
+unique_code_length = 5
+default_language = "ar"
+space_url_char = "spss"
+
 # التوكن الخاص بالبوت
 # يمكن جلب التوكن الخاص بالبوت من
 # @ https://t.me/botfather
@@ -58,6 +76,9 @@ BASE_DIR = Path(__file__).parent
 
 # البوت
 BOT: TeleBot = TeleBot(TOKEN)
+
+# مدير التحقق
+captcha_manager = CaptchaManager(BOT.get_me().id, default_options=options)
 
 # الرابط الخاص بالتيليجرام
 telegram_url = "https://t.me/"
