@@ -17,6 +17,8 @@ from config import (
     special,
     similarity2username,
     plans,
+    unique_code_length,
+    space_url_char,
 )
 from db.models import Message, Url, User, Session, Plan
 
@@ -326,7 +328,11 @@ def get_password_process(
 
 
 def register_(
-    username: str, password: Tuple[str, str], url: Url, language: str, user_chat_id: str
+    username: str,
+    password: Tuple[str, str],
+    url: Url,
+    language: str,
+    user_chat_id_: str,
 ):
     """انشاء مستخدم
 
@@ -355,16 +361,16 @@ def register_(
                     plan_name=url.plan_name,
                     password=password[1],  # hashed password from @ get_password_process
                 )
-                BOT.send_message(user_chat_id, create_successful_message)
+                BOT.send_message(user_chat_id_, create_successful_message)
                 if (url.using_limit - 1) == 0:
                     # مسح الرابط اذا تجاوز الحد الخاص به
                     url.delete_instance()
             except IntegrityError:
                 # اذا كان اسم المستخدم موجود بالفعل
-                BOT.send_message(user_chat_id, already_exists_username)
+                BOT.send_message(user_chat_id_, already_exists_username)
         else:
             BOT.send_message(
-                user_chat_id,
+                user_chat_id_,
                 get_message(
                     "invalid_registration", language=language, with_format=True
                 ),
@@ -374,7 +380,7 @@ def register_(
         already_exists_message = get_message(
             message_name="already_exists_username", language=language
         )
-        BOT.send_message(user_chat_id, already_exists_message)
+        BOT.send_message(user_chat_id_, already_exists_message)
 
 
 def get_username_process(
@@ -429,31 +435,27 @@ def get_username_process(
 
 
 def get_username_and_password(
-    func, message: types.Message, language: str, new: bool, **kwargs
+    func, user_chat_id: str, language: str, new: bool, **kwargs
 ) -> None:
     """اخذ اسم المستخدم وكلمة المرور وادخالهم في الدالة مع المعطيات الاخرى
 
     المعطيات:
         func (function): الدالة المراد ادخال كلمة المرور واسم المستخدم فيها
-        message (types.Message): الرسالة التي سوف يتم استخراج متغيرات المستخدم منها
+        user_chat_id (str): ايدي المحادثة
         language (str): لغة الرسائل التي سوف يتم ارسالها للمستخدم
         new (bool): طلب كلمة مرور واسم مستخدم جديدين ام لا
     """
-    chat_id = message.chat.id
-
     send_username_message = get_message(
         "send_new_username_message" if new else "send_username_message",
         language=language,
-        msg=message,
         with_format=True,
     )
     send_password_message = get_message(
         "send_new_password_message" if new else "send_password_message",
         language=language,
-        msg=message,
         with_format=True,
     )
-    msg = BOT.send_message(chat_id, send_username_message)
+    msg = BOT.send_message(user_chat_id, send_username_message)
     BOT.register_next_step_handler(
         msg,
         get_username_process,
@@ -490,14 +492,14 @@ def register(message: types.Message, language: str, unique_code: str) -> None:
         )
         BOT.reply_to(message, registration_plan_message.format(plan_name=plan_name))
         get_username_and_password(
-            message=message,
+            user_chat_id=message.chat.id,
             language=language,
             new=True,
             func=register_,
             check_password=True,
             # register_ kwargs
             url=url,
-            user_chat_id=message.chat.id,
+            user_chat_id_=message.chat.id,
         )
 
     else:
@@ -534,11 +536,11 @@ def create_url(
     if url_type in ("reset_password", "register"):
         # اذا كات النوع من ضمن الانواع المسموحة
         while True:
-            unique_code = "".join(choice(hexdigits) for _ in range(5))
+            unique_code = "".join(choice(hexdigits) for _ in range(unique_code_length))
             if not Url.get_or_none(Url.unique_code == unique_code):
                 break
 
-        url = f"{telegram_url}{bot_username}?start={url_type}spss{unique_code}"
+        url = f"{telegram_url}{bot_username}?start={url_type}{space_url_char}{unique_code}"
 
         Url.create(
             unique_code=unique_code,
@@ -597,17 +599,16 @@ def login_(
         BOT.send_message(chat_id, invalid_password_or_username)
 
 
-def login(message: types.Message, language: str) -> None:
+def login(user: types.User, language: str) -> None:
     """انشاء جلسة للمستخدم بعد اخذ اسم المستخدم وكلمة المرور منه
 
     المعطيات:
-        message (types.Message): الرسالة التي يوجد بها المستخدم (سوف يتم انشاء الجلسة له)
+        user (types.Usrt): الشخص الذي سوف يتم انشاء الجلسة له
         language (str): لغة الرسائل
     """
-    user = message.from_user
     get_username_and_password(
         func=login_,
-        message=message,
+        user_chat_id=user.id,
         language=language,
         new=False,
         # lognin_ kwargs
@@ -791,7 +792,7 @@ def send_url(
     message: types.Message,
     language: str,
     url_type: str,
-    plan_number: Optional[int]=None,
+    plan_number: Optional[int] = None,
     user_id: Optional[int] = None,
     using_limit: int = 1,
 ):
@@ -808,7 +809,9 @@ def send_url(
     send_url_message = get_message("send_url_message", language=language)
     plans_ = [get_message(plan, language) for plan in plans]
     plan_name = plans[plan_number] if plan_number else None
-    url = create_url(url_type=url_type, plan_name=plan_name, using_limit=using_limit, user_id=user_id)
+    url = create_url(
+        url_type=url_type, plan_name=plan_name, using_limit=using_limit, user_id=user_id
+    )
     BOT.reply_to(
         message,
         f"{send_url_message.format(plans_[plan_number], using_limit or '♾')}\n<code>{url}</code>",
