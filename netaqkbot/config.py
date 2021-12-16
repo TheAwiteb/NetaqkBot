@@ -35,12 +35,12 @@ password_policy = PasswordPolicy.from_names(
 max_using_limit = 4
 
 plans = [
-    "free_plan",
-    "bronze_plan",
-    "silver_plan",
-    "golden_plan",
-    "diamond_plan",
-    "admin_plan",
+    "free",
+    "bronze",
+    "silver",
+    "golden",
+    "diamond",
+    "admin",
 ]
 
 # تعديل بعض الحقول في اللغة الخاصة بالتحقق

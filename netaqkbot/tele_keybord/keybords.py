@@ -20,6 +20,14 @@ def _quick_markup(rows: List[List[dict]]) -> types.InlineKeyboardMarkup:
         markup.add(*buttons)
     return markup
 
+def update_message(query: types.CallbackQuery, message_text: str, keyboard_markup: types.InlineKeyboardMarkup) -> None:
+    """ نص الرسالة والكيبورد الخاص بها
+
+    المعطيات:
+        query (types.CallbackQuery): [description]
+        message_text (str): [description]
+        keyboard_markup (types.InlineKeyboardMarkup): [description]
+    """
 
 def start_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMarkup:
     """اراجاع كيبورد البداية
@@ -73,7 +81,7 @@ def create_user_keybord(
     get_url_button = get_message("get_url_button", language) + " 🔗"
     using_limit_message = get_message("using_limit", language) + " 👇"
 
-    plans_ = [get_message(plan, language) for plan in plans]
+    plans_ = [get_message(plan+"_plan", language) for plan in plans]
     plan_number = plan_number % len(plans_)
     using_limit = using_limit % max_using_limit
 
