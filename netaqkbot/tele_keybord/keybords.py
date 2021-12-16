@@ -111,7 +111,9 @@ def create_user_keybord(
 
 def language_keybord() -> types.InlineKeyboardMarkup:
     rows = [
-        {"العربية 🇸🇦": {"callback_data": "new_language=ar"}},
-        {"EN 🇺🇸": {"callback_data": "new_language=en"}},
+        {
+            "العربية 🇸🇦": {"callback_data": "new_language=ar"},
+            "EN 🇺🇸": {"callback_data": "new_language=en"},
+        },
     ]
     return _quick_markup(rows)
