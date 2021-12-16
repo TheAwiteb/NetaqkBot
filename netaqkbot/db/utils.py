@@ -19,10 +19,9 @@ def make(db: SqliteDatabase) -> None:
 
     for language in messages:
         for message_name, message in messages.get(language).items():
-            message = Message(
+            Message.create(
                 message_name=message_name, message=message, language=language
             )
-            message.save()
     for plan_name, kwargs in plans.items():
         plan = Plan(name=plan_name, **kwargs)
         plan.save()
