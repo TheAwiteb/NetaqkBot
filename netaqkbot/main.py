@@ -1,6 +1,6 @@
 import time
 from telebot import types, util
-from pyTelegramBotCAPTCHA import CaptchaManager
+from pyTelegramBotCAPTCHA import Captcha
 import utils
 from config import (
     COMMANDS,
@@ -10,14 +10,15 @@ from config import (
     telegram_url,
     private_chat_commands,
     default_commands,
+    captcha_manager,
+    default_language,
+    space_url_char,
 )
-from db.models import User, Session, Url, Plan
+from db.models import Session, Plan
 from tele_keybord import keybords
 
 # وضع الاوامر الخاصة بالبوت
 utils.set_commands(COMMANDS)
-
-captcha_manager = CaptchaManager(BOT.get_me().id, default_timeout=90)
 
 
 @BOT.message_handler(commands=private_chat_commands, chat_types="private")
@@ -30,13 +31,13 @@ def private_command_handler(message: types.Message) -> None:
     chat_id = message.chat.id
     # سحب الجلسة ان وجد
     session = Session.get_or_none(Session.telegram_id == user.id)
-    language = (session.user.language if session else None) or "ar"  # default ar
+    language = (session.user.language if session else None) or default_language
     is_admin = (
         Plan.get(Plan.name == session.user.plan_name).is_admin if session else False
     )  # default False
     command = util.extract_command(message.text).lower()
     args = util.extract_arguments(message.text)
-    url_args = args.split("spss")
+    url_args = args.split(space_url_char)
 
     if command == "start":
         if len(url_args) >= 2:
@@ -67,8 +68,9 @@ def private_command_handler(message: types.Message) -> None:
         BOT.reply_to(message, utils.get_message(message_name="help", language=language))
     elif command == "login":
         if not session:
-            # انشاء جلسة
-            utils.login(message=message, language=language)
+            # انشاء جلسة بعد تخطي التحقق
+            # with `utils.login` in `on_correct`
+            captcha_manager.send_new_captcha(BOT, message.chat, message.from_user)
         else:
             # اظهار رسالة خطأ لوجوده في جلسة
             BOT.reply_to(
@@ -122,6 +124,61 @@ def default_command_handler(message: types.Message) -> None:
         pass
 
 
+@BOT.callback_query_handler(
+    func=lambda q: q.data.startswith("?cap=") if q.data else False
+)
+def on_callback(query: types.CallbackQuery):
+    """معالجة الكويري الخاصة بالتحقق
+
+    المعطيات:
+        query (types.CallbackQuery): BOT.callback_query_handler الكويري يتم تمريره من الـ
+    """
+    captcha_manager.update_captcha(BOT, query)
+
+
+@captcha_manager.on_captcha_correct
+def on_correct(captcha: Captcha):
+    """اذا تم تجاوز التحقق
+
+    المعطيات:
+        captcha (Captcha): captcha_manager.on_captcha_correct ااوبجكت التحقق يتم تمريره من الـ
+    """
+    solve_captcha_message = utils.get_message(
+        "solve_captcha", language=default_language
+    )
+    BOT.send_message(captcha.chat.id, solve_captcha_message)
+    captcha_manager.delete_captcha(BOT, captcha)
+    utils.login(user=captcha.user, language=default_language)
+
+
+@captcha_manager.on_captcha_not_correct
+def on_not_correct(captcha: Captcha):
+    """اذا لم يتم تجاوز التحقق
+
+    المعطيات:
+        captcha (Captcha): captcha_manager.on_captcha_not_correct ااوبجكت التحقق يتم تمريره من الـ
+    """
+    failed_solve_captcha_message = utils.get_message(
+        "failed_solve_captcha", language=default_language
+    )
+    BOT.send_message(captcha.chat.id, failed_solve_captcha_message)
+    captcha_manager.delete_captcha(BOT, captcha)
+
+
+@captcha_manager.on_captcha_timeout
+def on_timeout(captcha: Captcha):
+    """اذا تم تجاوز وقت التحقق
+
+    المعطيات:
+        captcha (Captcha): captcha_manager.on_captcha_timeout ااوبجكت التحقق يتم تمريره من الـ
+    """
+    timeout_solve_captcha_message = utils.get_message(
+        "timeout_solve_captcha", language=default_language
+    )
+    BOT.send_message(captcha.chat.id, timeout_solve_captcha_message)
+    captcha_manager.delete_captcha(BOT, captcha)
+
+
 @BOT.callback_query_handler(func=lambda q: q.data.startswith("new_language="))
 def query_language(query: types.CallbackQuery) -> None:
     user = query.from_user
@@ -138,17 +195,19 @@ def query_language(query: types.CallbackQuery) -> None:
         session.user.save()
         BOT.edit_message_reply_markup(chat_id, message_id, reply_markup=None)
         BOT.edit_message_text(get_language_successful, chat_id, message_id)
+    else:
+        not_in_session_message = utils.get_message("not_in_session", language=language)
+        BOT.answer_callback_query(query.id, not_in_session_message)
 
 
 @BOT.callback_query_handler(func=lambda q: True)
 def callback_handler(query: types.CallbackQuery):
-
     user = query.from_user
     chat_id = query.message.chat.id
     message_id = query.message.id
     # سحب الجلسة ان وجد
     session = Session.get_or_none(Session.telegram_id == user.id)
-    language = (session.user.language if session else None) or "ar"  # default ar
+    language = (session.user.language if session else None) or default_language
     is_admin = (
         Plan.get(Plan.name == session.user.plan_name).is_admin if session else False
     )  # default False
