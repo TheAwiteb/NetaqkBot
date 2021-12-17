@@ -29,6 +29,7 @@ def private_command_handler(message: types.Message) -> None:
 
     user = message.from_user
     chat_id = message.chat.id
+    message_id = message.id
     # سحب الجلسة ان وجد
     session = Session.get_or_none(Session.telegram_id == user.id)
     language = (session.user.language if session else None) or default_language
@@ -51,17 +52,8 @@ def private_command_handler(message: types.Message) -> None:
                 )
         else:
             # رسالة البداية
-            BOT.reply_to(
-                message,
-                utils.get_message(
-                    message_name="admin_start" if is_admin else "start",
-                    language=language,
-                    msg=message,
-                    with_format=True,
-                ),
-                reply_markup=keybords.start_keybord(is_admin, language=language)
-                if session
-                else None,
+            keybord_utils.open_start_keybord_page(
+                chat_id, language, is_admin, with_message=True
             )
     elif command == "help":
         # رسالة المساعدة
@@ -213,18 +205,7 @@ def callback_handler(query: types.CallbackQuery):
     )  # default False
     action, *callback = query.data.split(":")
 
-    if action == "to":
-        # معالجة الانتقال الى الصفحات
-        if "home_page" in callback[0]:
-            keybord_utils.open_home_page(
-                chat_id=chat_id,
-                message_id=message_id,
-                language=language,
-                is_admin=is_admin,
-            )
-        else:
-            pass
-    elif action == "run":
+    if action == "run":
         if callback[0] == "create_url":
             plan_number, using_limit = [int(num) for num in callback[1].split()]
             utils.send_url(
@@ -241,7 +222,14 @@ def callback_handler(query: types.CallbackQuery):
                 chat_id=chat_id,
                 message_id=message_id,
                 language=language,
-                with_message=False,
+                with_message=True,
+            )
+        elif "home_page" in callback[0]:
+            keybord_utils.open_home_page(
+                chat_id=chat_id,
+                message_id=message_id,
+                language=language,
+                is_admin=is_admin,
             )
         else:
             pass
