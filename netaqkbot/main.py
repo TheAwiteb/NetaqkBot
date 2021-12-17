@@ -15,7 +15,7 @@ from config import (
     space_url_char,
 )
 from db.models import Session, Plan
-from tele_keybord import keybords
+from tele_keybord import keybords, utils as keybord_utils
 
 # وضع الاوامر الخاصة بالبوت
 utils.set_commands(COMMANDS)
@@ -216,7 +216,7 @@ def callback_handler(query: types.CallbackQuery):
     if action == "to":
         # معالجة الانتقال الى الصفحات
         if "home_page" in callback[0]:
-            utils.open_home_page(
+            keybord_utils.open_home_page(
                 chat_id=chat_id,
                 message_id=message_id,
                 language=language,
@@ -237,31 +237,24 @@ def callback_handler(query: types.CallbackQuery):
         BOT.answer_callback_query(query.id, "✅")
     elif action == "update":
         if callback[0] == "creat_user" and is_admin:
-            create_user_page_message = utils.get_message(
-                message_name="create_user_page_message", language=language
-            )
-            get_url_button = utils.get_message("get_url_button", language)
-            BOT.edit_message_text(
-                create_user_page_message.format(get_url_button), chat_id, message_id
-            )
-            BOT.edit_message_reply_markup(
-                chat_id,
-                message_id,
-                reply_markup=keybords.create_user_keybord(
-                    language=language, plan_number=0
-                ),
+            keybord_utils.open_create_user_page(
+                chat_id=chat_id,
+                message_id=message_id,
+                language=language,
+                with_message=False,
             )
         else:
             pass
     elif action == "updatek":
         if callback[0] == "create_user":
             plan_number, using_limit = [int(num) for num in callback[1].split()]
-            BOT.edit_message_reply_markup(
-                chat_id,
-                message_id,
-                reply_markup=keybords.create_user_keybord(
-                    language=language, plan_number=plan_number, using_limit=using_limit
-                ),
+            keybord_utils.open_create_user_page(
+                chat_id=chat_id,
+                message_id=message_id,
+                plan_number=plan_number,
+                using_limit=using_limit,
+                language=language,
+                with_message=False,
             )
         else:
             pass
