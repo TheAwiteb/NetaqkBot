@@ -224,7 +224,7 @@ def callback_handler(query: types.CallbackQuery):
                 language=language,
                 with_message=True,
             )
-        elif "home_page" in callback[0]:
+        elif callback[0] == "home_page":
             keybord_utils.open_home_page(
                 chat_id=chat_id,
                 message_id=message_id,

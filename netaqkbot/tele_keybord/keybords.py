@@ -36,7 +36,7 @@ def start_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMarkup:
     rows = [
         {
             get_message(home_page + "_button", language): {
-                "callback_data": f"update:{home_page}"
+                "callback_data": "update:home_page"
             }
         }
     ]
@@ -124,7 +124,7 @@ def user_keybord(
             },
         },
         {
-            back_button: {"callback_data": "update:admin_home_page"},
+            back_button: {"callback_data": "update:home_page"},
         },
     ]
 
