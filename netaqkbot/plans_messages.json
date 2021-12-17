@@ -17,6 +17,7 @@
             "admin_plan":"الادمنية",
             "plan_button":"الخطة",
             "get_url_button":"ارسال الرابط",
+            "back_button":"رجوع",
             "using_limit":"عدد الاستخدام",
             "send_url_message":"الرابط الخاص بالباقة الـ {} عدد مرات الاستخدام {}",
             "statistics_button":"الاحصائيات",
