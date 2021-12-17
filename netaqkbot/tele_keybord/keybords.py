@@ -1,7 +1,7 @@
 from telebot import types
 from typing import Optional, List
 from utils import get_message
-from config import max_using_limit, plans
+from config import max_using_limit, plans, BOT
 
 
 def _quick_markup(rows: List[List[dict]]) -> types.InlineKeyboardMarkup:
@@ -20,14 +20,6 @@ def _quick_markup(rows: List[List[dict]]) -> types.InlineKeyboardMarkup:
         markup.add(*buttons)
     return markup
 
-def update_message(query: types.CallbackQuery, message_text: str, keyboard_markup: types.InlineKeyboardMarkup) -> None:
-    """ نص الرسالة والكيبورد الخاص بها
-
-    المعطيات:
-        query (types.CallbackQuery): [description]
-        message_text (str): [description]
-        keyboard_markup (types.InlineKeyboardMarkup): [description]
-    """
 
 def start_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMarkup:
     """اراجاع كيبورد البداية
@@ -53,7 +45,15 @@ def start_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMarkup:
 
 
 def home_page_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMarkup:
+    """انشاء اكيبورد الصفحة الرئيسية
 
+    المعطيات:
+        is_admin (bool): هل طالب اللوحة ادمن (لكي يتم عرض الازرار الخاصة بالادمنية)
+        language (str): اللغة
+
+    المخرجات:
+        types.InlineKeyboardMarkup: الكيبورد
+    """
     statistics_button = get_message("statistics_button", language)
     sessions_button = get_message("sessions_button", language)
     creat_user_button = get_message("creat_user_button", language)
@@ -74,14 +74,24 @@ def home_page_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMark
     return _quick_markup(rows)
 
 
-def create_user_keybord(
+def user_keybord(
     language: str, plan_number: Optional[int] = 0, using_limit: Optional[int] = 0
 ) -> types.InlineKeyboardMarkup:
+    """انشاء الكيبورد الخاص بانشاء المستخدمين
+
+    المعطيات:
+        language (str): اللغة
+        plan_number (Optional[int], optional): رقم الخطة المراد عرضها. Defaults to 0.
+        using_limit (Optional[int], optional): عدد مرات الاستخدام المراد وضعه. Defaults to 0.
+
+    المخرجات:
+        types.InlineKeyboardMarkup: الكيبورد
+    """
     plan_button = get_message("plan_button", language) + " 👇"
     get_url_button = get_message("get_url_button", language) + " 🔗"
     using_limit_message = get_message("using_limit", language) + " 👇"
 
-    plans_ = [get_message(plan+"_plan", language) for plan in plans]
+    plans_ = [get_message(plan + "_plan", language) for plan in plans]
     plan_number = plan_number % len(plans_)
     using_limit = using_limit % max_using_limit
 
@@ -118,6 +128,11 @@ def create_user_keybord(
 
 
 def language_keybord() -> types.InlineKeyboardMarkup:
+    """انشاء االكيبورد الخاص بتغير اللغة
+
+    المخرجات:
+        types.InlineKeyboardMarkup: الكيبورد
+    """
     rows = [
         {
             "العربية 🇸🇦": {"callback_data": "new_language=ar"},
