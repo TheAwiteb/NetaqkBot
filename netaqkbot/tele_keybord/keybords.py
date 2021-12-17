@@ -36,7 +36,7 @@ def start_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMarkup:
     rows = [
         {
             get_message(home_page + "_button", language): {
-                "callback_data": f"to:{home_page}"
+                "callback_data": f"update:{home_page}"
             }
         }
     ]
@@ -90,6 +90,7 @@ def user_keybord(
     plan_button = get_message("plan_button", language) + " 👇"
     get_url_button = get_message("get_url_button", language) + " 🔗"
     using_limit_message = get_message("using_limit", language) + " 👇"
+    back_button = get_message("back_button", language)
 
     plans_ = [get_message(plan + "_plan", language) for plan in plans]
     plan_number = plan_number % len(plans_)
@@ -121,6 +122,9 @@ def user_keybord(
             "➡️": {
                 "callback_data": f"updatek:create_user:{plan_number} {using_limit+1}"
             },
+        },
+        {
+            back_button: {"callback_data": "update:admin_home_page"},
         },
     ]
 
