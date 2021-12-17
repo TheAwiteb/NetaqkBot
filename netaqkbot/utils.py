@@ -199,35 +199,6 @@ def test_password(
     return error_text or None
 
 
-def open_home_page(
-    chat_id: str, language: str, is_admin: bool, message_id: Optional[int] = None
-) -> None:
-    """ارسال رسالة الصفحة الرئيسية او تعديل رسالة موجودة اذ تم اسناد ايدي الرسالة
-
-    المعطيات:
-        chat_id (str): المحادثة المراد ارسال الصفحة الرئيسية بها
-        language (str): لغة الصفحة الرئيسية
-        is_admin (bool): فتحها لادمن ام لمستخدم عادي
-        message_id (Optional[int]): ايدي الرسالة المراد تعديلها (اذ لم يكن موجود سوف يتم ارسال جديدة) default to None.
-    """
-    from tele_keybord.keybords import home_page_keybord
-
-    home_page_message_name = (
-        "admin_home_page_message" if is_admin else "user_home_page_message"
-    )
-    home_page_message = get_message(
-        message_name=home_page_message_name, language=language
-    )
-
-    keybord = home_page_keybord(is_admin, language)
-
-    if message_id:
-        BOT.edit_message_text(home_page_message, chat_id, message_id)
-        BOT.edit_message_reply_markup(chat_id, message_id, reply_markup=keybord)
-    else:
-        BOT.send_message(chat_id, home_page_message, reply_markup=keybord)
-
-
 def language_message(chat_id: str, language: str) -> None:
     """ارسال كيبورد اللغة الى دردشة (تتم معالجته في المف الرئيسي)
 
