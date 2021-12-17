@@ -19,9 +19,12 @@ def update_keyboard(
         message_id (int, optional): ايدي الرسالة المراد تعديلها ان وجد.
         message_text (str, optional): الرسالة المراد وضعها مع الكيبورد (اذا كنت تريد تغيرها، يمكنك تمرير الكيبورد فقط لتحديثه بدون تحديث الرسالة)
     """
-    if message_text and message_id:
-        BOT.edit_message_text(message_text, chat_id, message_id)
-    BOT.edit_message_reply_markup(chat_id, message_id, reply_markup=keyboard_markup)
+    if message_id:
+        if message_text:
+            BOT.edit_message_text(message_text, chat_id, message_id)
+        BOT.edit_message_reply_markup(chat_id, message_id, reply_markup=keyboard_markup)
+    else:
+        BOT.send_message(chat_id, message_text, reply_markup=keyboard_markup)
 
 
 def open_home_page(
@@ -75,4 +78,35 @@ def open_create_user_page(
         create_user_page_message.format(get_url_button=get_url_button)
         if with_message
         else None,
+    )
+
+
+def open_start_keybord_page(
+    chat_id: str,
+    language: str,
+    is_admin: bool,
+    with_message: bool,
+    message_id: Optional[int] = None,
+):
+    """فتح اللوحة الخاصة بانشاء المستخدم او تحديث الكيبورد الخاص بها اذا تم تمرير ايدي الرسالة
+
+    المعطيات:
+        chat_id (str): ايدي المحادثة
+        language (str): اللغة
+        with_message (bool): تحديث االرسالة مع الكيبورد
+        is_admin (bool):  الكيبورد للادمن
+        message_id (Optional[int], optional): ايدي الرسالة اذا كنت تريد تحديثها.
+    """
+    start_keyboard_message = (
+        utils.get_message(
+            message_name="admin_start" if is_admin else "start",
+            language=language,
+            with_format=True,
+        ),
+    )
+    update_keyboard(
+        keybords.start_keybord(is_admin=is_admin, language=language),
+        chat_id,
+        message_id,
+        start_keyboard_message if with_message else None,
     )
