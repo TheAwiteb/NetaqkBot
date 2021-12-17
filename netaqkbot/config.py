@@ -49,12 +49,15 @@ custom_language = CustomLanguage(
     text="اهلا #USER عذرا لازعاجك ولكن لمتابعة تسجيل الدخول يجب التاكد من انك مستخدم حقيقي",
 )
 # تعريف اوبجكت الخيارات
-options = CaptchaOptions()
-options.generator = "keyzend"  # نوع منشئ الصور
-options.code_length = 4  # طول رسالة التحقق
-options.max_attempts = 4  # عدد المحاولات
-options.max_user_reloads = 4  # عدد تغير الصورة
-options.custom_language = custom_language  # اللغة (اللغة العربية موجودة بالفعل، ولكن تم تعديل رسالة التحقق اعلاه)
+options = CaptchaOptions(
+    generator="default",  # نوع منشئ الصور
+    add_noise=False,  # اضافة تشويش للصورة
+    only_digits=True,  # استخدام الارقام فقط
+    code_length=6,  # طول رسالة التحقق
+    max_attempts=2,  # عدد المحاولات
+    max_user_reloads=3,  # عدد تغير الصورة
+    custom_language=custom_language,  # اللغة (اللغة العربية موجودة بالفعل، ولكن تم تعديل رسالة التحقق اعلاه)
+)
 
 unique_code_length = 5
 default_language = "ar"
