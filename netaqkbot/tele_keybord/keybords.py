@@ -1,7 +1,7 @@
 from telebot import types
 from typing import Optional, List
 from utils import get_message
-from config import max_using_limit, plans, BOT
+from config import max_using_limit, plans, max_session_timeout
 
 
 def _quick_markup(rows: List[List[dict]]) -> types.InlineKeyboardMarkup:
@@ -65,7 +65,7 @@ def home_page_keybord(is_admin: bool, language: str) -> types.InlineKeyboardMark
         {
             statistics_button: {"callback_data": f"update:?"},  # TODO
             sessions_button: {"callback_data": f"update:?"},  # TODO
-            settings_button: {"callback_data": f"update:?"},  # TODO
+            settings_button: {"callback_data": f"update:setting"},
         }
     )
     if is_admin:
@@ -143,4 +143,68 @@ def language_keybord() -> types.InlineKeyboardMarkup:
             "EN 🇺🇸": {"callback_data": "new_language=en"},
         },
     ]
+    return _quick_markup(rows)
+
+
+def setting_keybord(
+    is_admin: bool, language: str, session_timeout: int
+) -> types.InlineKeyboardMarkup:
+    """انشاء كيبورد الاعدادات
+
+    المعطيات:
+        is_admin (bool): هل الكيبورد مرسل لادمن
+        language (str): لغة االكيبورد
+        session_timeout (int): وقت الجلسة
+
+    المخرجات:
+        types.InlineKeyboardMarkup: كيبورد الاعدادات
+    """
+    change_password_button = get_message("change_password_button", language=language)
+    change_language_button = get_message("change_language_button", language=language)
+    session_timeout_button = get_message("session_timeout_button", language=language)
+    bot_configuration_button = get_message(
+        "bot_configuration_button", language=language
+    )
+    bot_messages_button = get_message("bot_messages_button", language=language)
+
+    back_button = get_message("back_button", language=language)
+    mod = lambda num: num % max_session_timeout
+    session_timeout = mod(session_timeout)
+
+    rows = []
+    if is_admin:
+        rows.append(
+            {
+                bot_configuration_button: {"callback_data": "update:bot_messages"},
+                bot_messages_button: {"callback_data": "update:bot_configuration"},
+            }
+        )
+    rows.extend(
+        [
+            {
+                change_password_button: {"callback_data": "run:change_password"},
+                change_language_button: {"callback_data": "run:change_language"},
+            },
+            {
+                session_timeout_button
+                + " 👇": {"callback_data": f"print:{session_timeout_button}"},
+            },
+            # if session_timeout == 0, in button will be '♾'
+            {
+                f'{session_timeout or "♾"}h': {
+                    "callback_data": f"print:{session_timeout_button} {session_timeout or '♾'}h"
+                }
+            },
+            {
+                # use `mod` to return `0` if `session_timeout+1` == `max_session_timeout` 
+                # and return `max_session_timeout` if `session_timeout-1` == '-1'
+                "⬅️": {"callback_data": f"updatek:setting:{mod(session_timeout-1)}"},
+                "➡️": {"callback_data": f"updatek:setting:{mod(session_timeout+1)}"},
+            },
+            {
+                back_button: {"callback_data": "update:home_page"},
+            },
+        ]
+    )
+
     return _quick_markup(rows)

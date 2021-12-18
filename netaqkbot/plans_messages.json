@@ -31,7 +31,7 @@
             "send_password_message":"الرجاء ادخال كلمة المرور\nللالغاء ارسل /cancel",
             "send_new_username_message":"الرجاء ادخال اسم المستخدم الجديد\nللالغاء ارسل /cancel",
             "send_new_password_message":"الرجاء ادخال كلمة المرور الجديدة\nللالغاء ارسل /cancel",
-            "change_language_message":"اختار اللغة من الاسفل",
+            "choese_language_message":"اختار اللغة من الاسفل",
             "create_account_successful":"تم انشاء الحساب بنجاح يمكنك تسجيل الدخول الان /login\nاسم المستخدم هو {}",
             "already_exists_username":"اسم المستخدم هذا مستخدم بالفعل",
             "get_language_successful":"تم التغير بنجاح الى اللغة العربية",
@@ -53,9 +53,15 @@
             "invalid_reset_password":"عذرا رمز اعادة تعيين كلمة المرور غير صحيح تواصل مع الدعم الفني /help",
             "password_reset_message":"تم التعرف على رمز اعادة تعيين كلمة المرور بنجاح، هذا الرمز لاعادة تعين كلمة مرور هذا الحساب {username}",
             "create_user_page_message":".اختار باقة المستخدم الجديد ثم اضغط على {get_url_button} لارسال الرابط",
+            "change_password_button":"تغير كلمة المرور",
+            "change_language_button":"تغير اللغة",
+            "session_timeout_button":"وقت الجلسة",
+            "bot_configuration_button":"تكوينات البوت",
+            "bot_messages_button":"رسائل البوت",
             "solve_captcha":"لقد تم تخطي التحقق بنجاح",
             "failed_solve_captcha":"عذرا، لن تتمكن من تسجيل الدخول لعدم تجاوزك التحقق",
-            "timeout_solve_captcha":"عذرا، لقد تم تجاوز وقت التحقق"
+            "timeout_solve_captcha":"عذرا، لقد تم تجاوز وقت التحقق",
+            "setting_message":"رسالة الاعدادات"
         },
         "en": {
             "start":"start message",

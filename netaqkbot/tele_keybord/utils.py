@@ -110,3 +110,33 @@ def open_start_keybord_page(
         message_id,
         start_keyboard_message if with_message else None,
     )
+
+
+def open_setting_keybord_page(
+    chat_id: str,
+    language: str,
+    is_admin: bool,
+    with_message: bool,
+    session_timeout: int,
+    message_id: Optional[int] = None,
+):
+    """فتح اللوحة الخاصة بانشاء المستخدم او تحديث الكيبورد الخاص بها اذا تم تمرير ايدي الرسالة
+
+    المعطيات:
+        chat_id (str): ايدي المحادثة
+        language (str): اللغة
+        is_admin (bool):  الكيبورد للادمن
+        with_message (bool): تحديث االرسالة مع الكيبورد
+        session_timeout (int): وقت الجلسة قبل مسحها
+        message_id (Optional[int], optional): ايدي الرسالة اذا كنت تريد تحديثها.
+    """
+
+    setting_message = utils.get_message("setting_message", language=language)
+    update_keyboard(
+        keybords.setting_keybord(
+            is_admin=is_admin, session_timeout=session_timeout, language=language
+        ),
+        chat_id,
+        message_id,
+        setting_message if with_message else None,
+    )

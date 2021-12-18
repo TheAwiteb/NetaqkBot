@@ -204,6 +204,7 @@ def callback_handler(query: types.CallbackQuery):
         Plan.get(Plan.name == session.user.plan_name).is_admin if session else False
     )  # default False
     action, *callback = query.data.split(":")
+    print(callback, session.timeout)
 
     if action == "run":
         if callback[0] == "create_url":
@@ -231,6 +232,17 @@ def callback_handler(query: types.CallbackQuery):
                 language=language,
                 is_admin=is_admin,
             )
+        elif callback[0] == "setting":
+            keybord_utils.open_setting_keybord_page(
+                chat_id=chat_id,
+                message_id=message_id,
+                language=language,
+                is_admin=is_admin,
+                session_timeout=utils.time_converter(
+                    session.timeout, seconds2hours=True
+                ),
+                with_message=True,
+            )
         else:
             pass
     elif action == "updatek":
@@ -242,6 +254,18 @@ def callback_handler(query: types.CallbackQuery):
                 plan_number=plan_number,
                 using_limit=using_limit,
                 language=language,
+                with_message=False,
+            )
+        elif callback[0] == "setting":
+            session_timeout = int(callback[1])
+            session.timeout = utils.time_converter(session_timeout, seconds2hours=False)
+            session.save()
+            keybord_utils.open_setting_keybord_page(
+                chat_id=chat_id,
+                message_id=message_id,
+                language=language,
+                is_admin=is_admin,
+                session_timeout=session_timeout,
                 with_message=False,
             )
         else:
