@@ -1,7 +1,9 @@
 from peewee import *
-from config import default_session_timeout
-from db.config import db
 from datetime import datetime
+from threading import Thread
+from time import time
+from config import default_session_timeout, check_timeout_delay, exit_event
+from db.config import db
 
 
 class User(Model):
@@ -35,6 +37,67 @@ class Session(Model):
     timeout = IntegerField(
         default=default_session_timeout
     )  # as seconds, 0 means no timeout
+
+    def make_record(self) -> None:
+        """
+        تجديد وقت اخر تسجيل للجلسة
+        """
+        self.last_record = datetime.now()
+        self.save()
+
+    def check_timeout(self) -> None:
+        """
+        التحقق من انتهاء وقت الجلسة، واذا انتهت يتم مسحها
+        """
+        from utils import _logout
+
+        if (
+            time()  # - self.timeout
+        ) >= self.last_record.timestamp() and self.timeout != 0:
+            # تم تعدي وقت الجلسة
+            _logout(self, self.user.language, is_timeout=True)
+
+    @classmethod
+    def run_timeout_checker(cls: "Session") -> None:
+        """
+        تشغيل مدقق المهلة في ثريد منفصل
+        """
+
+        def check() -> bool:
+            """
+            التحقق من ان البوت انتهى ام لا
+
+            المخرجات:
+                bool: قيمة صحيحة اذ تم ايقاف البوت وقيمة خاطئة اذ لم يتم ايقاف البوت
+            """
+            return exit_event.is_set()
+
+        def sleep_and_check(seconds: int) -> bool:
+            """عدم فعل شي لمدة الثواني التي تم ادخالها، والتحقق من حالة البوت
+
+            المعطيات:
+                seconds (int): الوقت المراد التوقف والتحقق بنفس الوقت
+
+            المخرجات:
+                bool: قيمة صحيحة اذ لم يتم ايقاف البوت وقيمة خاطئة اذ تم ايقاف البوت
+            """
+            now = time()
+            while time() < now + seconds:
+                if not check():
+                    return False
+            return True
+
+        def timeout_checker() -> None:
+            """
+            دالة التحقق خاصة بالثريد
+            """
+            while True:
+                for session in cls.select():
+                    session.check_timeout()
+                if not sleep_and_check(check_timeout_delay):
+                    break
+
+        Thread(target=timeout_checker).start()
 
 
 class Message(Model):
