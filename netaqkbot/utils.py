@@ -603,16 +603,19 @@ def login(user: types.User, language: str) -> None:
     )
 
 
-def _logout(session: Session, language: str) -> None:
+def _logout(session: Session, language: str, is_timeout: bool = False) -> None:
     """مسح الجلسة
 
     المعطيات:
         session (Session): الجلسة المراد مسحها
         language (str): اللغة لكي يتم ارسال رسالة المسح
+        is_timeout (bool): هل يتم قطعها لانهاه تعدت وقت الجلسة ام لا
     """
     logout_successful = get_message(
-        "logout_successful", language=language, with_format=True
-    )
+        "timeout_message" if is_timeout else "logout_successful",
+        language=language,
+        with_format=True,
+    ).format(timeout=f"{time_converter(session.timeout, seconds2hours=True)}h")
     if Session.get_or_none(Session.id == session.id):
         session.delete_instance()
         BOT.send_message(session.telegram_id, logout_successful)
