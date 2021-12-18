@@ -62,7 +62,11 @@
             "solve_captcha":"لقد تم تخطي التحقق بنجاح",
             "failed_solve_captcha":"عذرا، لن تتمكن من تسجيل الدخول لعدم تجاوزك التحقق",
             "timeout_solve_captcha":"عذرا، لقد تم تجاوز وقت التحقق",
-            "setting_message":"رسالة الاعدادات"
+            "setting_message":"رسالة الاعدادات",
+            "tow_hours":"ساعتين",
+            "hour":"ساعة",
+            "hours":"ساعات",
+            "infinity_session_timeout":"عدم اغلاق الجلسة"
         },
         "en": {
             "start":"start message",

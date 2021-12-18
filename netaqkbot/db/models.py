@@ -52,7 +52,7 @@ class Session(Model):
         from utils import _logout
 
         if (
-            time()  # - self.timeout
+            time() - self.timeout
         ) >= self.last_record.timestamp() and self.timeout != 0:
             # تم تعدي وقت الجلسة
             _logout(self, self.user.language, is_timeout=True)

@@ -1,6 +1,6 @@
 from telebot import types
 from typing import Optional, List
-from utils import get_message
+from utils import get_message, hours2words
 from config import max_using_limit, plans, max_session_timeout
 
 
@@ -166,10 +166,18 @@ def setting_keybord(
         "bot_configuration_button", language=language
     )
     bot_messages_button = get_message("bot_messages_button", language=language)
+    infinity_session_timeout = get_message(
+        "infinity_session_timeout", language=language
+    )
 
     back_button = get_message("back_button", language=language)
     mod = lambda num: num % max_session_timeout
     session_timeout = mod(session_timeout)
+    session_timeout_word = (
+        infinity_session_timeout
+        if session_timeout == 0
+        else hours2words(session_timeout, language=language)
+    )
 
     rows = []
     if is_admin:
@@ -190,11 +198,7 @@ def setting_keybord(
                 + " 👇": {"callback_data": f"print:{session_timeout_button}"},
             },
             # if session_timeout == 0, in button will be '♾'
-            {
-                f'{session_timeout or "♾"}h': {
-                    "callback_data": f"print:{session_timeout_button} {session_timeout or '♾'}h"
-                }
-            },
+            {session_timeout_word: {"callback_data": f"print:{session_timeout_word}"}},
             {
                 # use `mod` to return `0` if `session_timeout+1` == `max_session_timeout`
                 # and return `max_session_timeout` if `session_timeout-1` == '-1'

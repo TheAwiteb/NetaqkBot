@@ -6,6 +6,7 @@ from string import hexdigits
 from hashlib import sha256
 from password_strength import tests
 from difflib import SequenceMatcher
+from num2words import num2words
 from config import (
     BOT,
     bot_username,
@@ -59,6 +60,32 @@ def time_converter(the_time: int, seconds2hours: bool = False) -> int:
         return (the_time // 60) // 60
     else:
         return int((the_time * 60) * 60)
+
+
+def hours2words(hours_num: int, language: str) -> str:
+    """تحويل عدد الساعات الى نص
+
+    المعطيات:
+        hours_num (int): عدد الساعات
+        language (str): اللغة
+
+    المخرجات:
+        str: عدد الساعات بعد تحويله الى نص
+    """
+    tow_hours = get_message("tow_hours", language=language)
+    hour = get_message("hour", language=language)
+    hours = get_message("hours", language=language)
+    num = num2words(hours_num, lang=language)
+
+    if hours_num == 1:
+        return hour
+    elif hours_num == 2:
+        return tow_hours
+    else:
+        if 3 <= hours_num <= 10:
+            return f"{num} {hours}"
+        else:
+            return f"{num} {hour}"
 
 
 def parse_text(text: Optional[str] = None) -> Optional[str]:
@@ -615,7 +642,11 @@ def _logout(session: Session, language: str, is_timeout: bool = False) -> None:
         "timeout_message" if is_timeout else "logout_successful",
         language=language,
         with_format=True,
-    ).format(timeout=f"{time_converter(session.timeout, seconds2hours=True)}h")
+    ).format(
+        timeout=hours2words(
+            time_converter(session.timeout, seconds2hours=True), language=language
+        )
+    )
     if Session.get_or_none(Session.id == session.id):
         session.delete_instance()
         BOT.send_message(session.telegram_id, logout_successful)
