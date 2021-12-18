@@ -45,6 +45,22 @@ def set_commands(commands: dict) -> None:
     ]
 
 
+def time_converter(the_time: int, seconds2hours: bool = False) -> int:
+    """تحويل الوقت من ثواني الى ساعات والعكس
+
+    المعطيات:
+        the_time (int): الوقت
+        seconds2hours (bool, optional): False تحويل الثواني الى ساعات او العكس اذ كانت بـ. Defaults to False.
+
+    المخرجات:
+        int: عدد الثواني او الساعات بعد التحويل
+    """
+    if seconds2hours:
+        return (the_time // 60) // 60
+    else:
+        return int((the_time * 60) * 60)
+
+
 def parse_text(text: Optional[str] = None) -> Optional[str]:
     """اذا لم يكن هناك نص او ان النص المدخل امر غير معروف None معالجة النص يتم ارجاع
 
@@ -208,10 +224,10 @@ def language_message(chat_id: str, language: str) -> None:
     """
     from tele_keybord.keybords import language_keybord
 
-    change_language_message = get_message("change_language_message", language=language)
+    choese_language_message = get_message("choese_language_message", language=language)
 
     keybord = language_keybord()
-    BOT.send_message(chat_id, change_language_message, reply_markup=keybord)
+    BOT.send_message(chat_id, choese_language_message, reply_markup=keybord)
 
 
 def get_password_process(
