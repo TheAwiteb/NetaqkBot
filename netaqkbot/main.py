@@ -1,7 +1,6 @@
 import time
 from telebot import types, util
 from pyTelegramBotCAPTCHA import Captcha
-import utils
 from config import (
     COMMANDS,
     BOT,
@@ -13,9 +12,11 @@ from config import (
     captcha_manager,
     default_language,
     space_url_char,
+    exit_event,
 )
 from db.models import Session, Plan
-from tele_keybord import keybords, utils as keybord_utils
+import utils
+from tele_keybord import utils as keybord_utils
 
 # وضع الاوامر الخاصة بالبوت
 utils.set_commands(COMMANDS)
@@ -32,6 +33,7 @@ def private_command_handler(message: types.Message) -> None:
     message_id = message.id
     # سحب الجلسة ان وجد
     session = Session.get_or_none(Session.telegram_id == user.id)
+    session.make_record() if session else None
     language = (session.user.language if session else None) or default_language
     is_admin = (
         Plan.get(Plan.name == session.user.plan_name).is_admin if session else False
@@ -176,6 +178,7 @@ def query_language(query: types.CallbackQuery) -> None:
     user = query.from_user
     # سحب الجلسة ان وجد
     session = Session.get_or_none(Session.telegram_id == user.id)
+    session.make_record() if session else None
     chat_id = query.message.chat.id
     message_id = query.message.id
     language = query.data.split("=")[1]
@@ -199,81 +202,87 @@ def callback_handler(query: types.CallbackQuery):
     message_id = query.message.id
     # سحب الجلسة ان وجد
     session = Session.get_or_none(Session.telegram_id == user.id)
+    session.make_record() if session else None
     language = (session.user.language if session else None) or default_language
     is_admin = (
         Plan.get(Plan.name == session.user.plan_name).is_admin if session else False
     )  # default False
     action, *callback = query.data.split(":")
-    print(callback, session.timeout)
 
-    if action == "run":
-        if callback[0] == "create_url":
-            plan_number, using_limit = [int(num) for num in callback[1].split()]
-            utils.send_url(
-                message=query.message,
-                url_type="register",
-                plan_number=plan_number,
-                using_limit=using_limit,
-                language=language,
-            )
-        BOT.answer_callback_query(query.id, "✅")
-    elif action == "update":
-        if callback[0] == "creat_user" and is_admin:
-            keybord_utils.open_create_user_page(
-                chat_id=chat_id,
-                message_id=message_id,
-                language=language,
-                with_message=True,
-            )
-        elif callback[0] == "home_page":
-            keybord_utils.open_home_page(
-                chat_id=chat_id,
-                message_id=message_id,
-                language=language,
-                is_admin=is_admin,
-            )
-        elif callback[0] == "setting":
-            keybord_utils.open_setting_keybord_page(
-                chat_id=chat_id,
-                message_id=message_id,
-                language=language,
-                is_admin=is_admin,
-                session_timeout=utils.time_converter(
-                    session.timeout, seconds2hours=True
-                ),
-                with_message=True,
-            )
+    if session:
+        if action == "run":
+            if callback[0] == "create_url":
+                plan_number, using_limit = [int(num) for num in callback[1].split()]
+                utils.send_url(
+                    message=query.message,
+                    url_type="register",
+                    plan_number=plan_number,
+                    using_limit=using_limit,
+                    language=language,
+                )
+            BOT.answer_callback_query(query.id, "✅")
+        elif action == "update":
+            if callback[0] == "creat_user" and is_admin:
+                keybord_utils.open_create_user_page(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    language=language,
+                    with_message=True,
+                )
+            elif callback[0] == "home_page":
+                keybord_utils.open_home_page(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    language=language,
+                    is_admin=is_admin,
+                )
+            elif callback[0] == "setting":
+                keybord_utils.open_setting_keybord_page(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    language=language,
+                    is_admin=is_admin,
+                    session_timeout=utils.time_converter(
+                        session.timeout, seconds2hours=True
+                    ),
+                    with_message=True,
+                )
+            else:
+                pass
+        elif action == "updatek":
+            if callback[0] == "create_user":
+                plan_number, using_limit = [int(num) for num in callback[1].split()]
+                keybord_utils.open_create_user_page(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    plan_number=plan_number,
+                    using_limit=using_limit,
+                    language=language,
+                    with_message=False,
+                )
+            elif callback[0] == "setting":
+                session_timeout = int(callback[1])
+                session.timeout = utils.time_converter(
+                    session_timeout, seconds2hours=False
+                )
+                session.save()
+                keybord_utils.open_setting_keybord_page(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    language=language,
+                    is_admin=is_admin,
+                    session_timeout=session_timeout,
+                    with_message=False,
+                )
+            else:
+                pass
+        elif action == "print":
+            BOT.answer_callback_query(query.id, callback[0])
         else:
             pass
-    elif action == "updatek":
-        if callback[0] == "create_user":
-            plan_number, using_limit = [int(num) for num in callback[1].split()]
-            keybord_utils.open_create_user_page(
-                chat_id=chat_id,
-                message_id=message_id,
-                plan_number=plan_number,
-                using_limit=using_limit,
-                language=language,
-                with_message=False,
-            )
-        elif callback[0] == "setting":
-            session_timeout = int(callback[1])
-            session.timeout = utils.time_converter(session_timeout, seconds2hours=False)
-            session.save()
-            keybord_utils.open_setting_keybord_page(
-                chat_id=chat_id,
-                message_id=message_id,
-                language=language,
-                is_admin=is_admin,
-                session_timeout=session_timeout,
-                with_message=False,
-            )
-        else:
-            pass
-    elif action == "print":
-        BOT.answer_callback_query(query.id, callback[0])
     else:
-        pass
+        not_in_session_message = utils.get_message("not_in_session", language=language)
+        BOT.answer_callback_query(query.id, not_in_session_message)
 
 
 def main():
@@ -292,12 +301,13 @@ if __name__ == "__main__":
         url = utils.create_url(url_type="register", plan_name="admin")
         print(f"Go to the link below and follow the registration process there\n{url}")
     else:
+        Session.run_timeout_checker()
         try:
             main()
         except KeyboardInterrupt:
-            pass  # التوقف عن اعادة تشغيل البوت
+            exit_event.set()  # التوقف عن اعادة تشغيل البوت وايقاف الثريدات
         except Exception as err:
             print(err)
-            print("\nRerun bot after 10s")
+            print("\nRerun bot after 5s")
             time.sleep(5)
             main()  # اعادة تشغيل البوت
