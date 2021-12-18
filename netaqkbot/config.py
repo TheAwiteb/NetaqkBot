@@ -5,6 +5,7 @@ from password_strength import PasswordPolicy
 from os import environ
 from pathlib import Path
 from dotenv import load_dotenv
+from threading import Event
 from telebot import TeleBot
 from pyTelegramBotCAPTCHA import CaptchaManager, CaptchaOptions, CustomLanguage
 from telebot.types import (
@@ -67,6 +68,9 @@ space_url_char = "spss"
 max_using_limit = 4  # using the url 'reset_password' and 'register'
 default_session_timeout = (3 * 60) * 60  # 3h in seconds
 max_session_timeout = 5  # 5h
+
+check_timeout_delay = 3 * 60  # 3m
+exit_event = Event()
 
 # التوكن الخاص بالبوت
 # يمكن جلب التوكن الخاص بالبوت من
