@@ -196,7 +196,7 @@ def setting_keybord(
                 }
             },
             {
-                # use `mod` to return `0` if `session_timeout+1` == `max_session_timeout` 
+                # use `mod` to return `0` if `session_timeout+1` == `max_session_timeout`
                 # and return `max_session_timeout` if `session_timeout-1` == '-1'
                 "⬅️": {"callback_data": f"updatek:setting:{mod(session_timeout-1)}"},
                 "➡️": {"callback_data": f"updatek:setting:{mod(session_timeout+1)}"},
