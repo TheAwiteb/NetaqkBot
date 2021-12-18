@@ -15,6 +15,7 @@ from telebot.types import (
 
 load_dotenv()
 
+
 # password policy
 length = 8  # min length: 10
 uppercase = 1  # need min. 1 uppercase letters
@@ -32,7 +33,6 @@ password_policy = PasswordPolicy.from_names(
     special=special,
 )
 
-max_using_limit = 4
 
 plans = [
     "free",
@@ -63,6 +63,11 @@ unique_code_length = 5
 default_language = "ar"
 space_url_char = "spss"
 
+# for `using_limit` and `session_time` infinity is 0
+max_using_limit = 4  # using the url 'reset_password' and 'register'
+default_session_timeout = (3 * 60) * 60  # 3h in seconds
+max_session_timeout = 5  # 5h
+
 # التوكن الخاص بالبوت
 # يمكن جلب التوكن الخاص بالبوت من
 # @ https://t.me/botfather
@@ -74,7 +79,7 @@ TOKEN = (
     )  # او ادخله عند طلبه منك
 )
 
-# BASE_DIR is: path_to/salla_email_bot/salla_email_bot
+# BASE_DIR is: path_to/NetaqkBot/netaqkbot
 BASE_DIR = Path(__file__).parent
 
 # البوت

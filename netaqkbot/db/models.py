@@ -1,4 +1,5 @@
 from peewee import *
+from config import default_session_timeout
 from db.config import db
 from datetime import datetime
 
@@ -31,6 +32,9 @@ class Session(Model):
 
     created_at = DateTimeField(default=datetime.now)
     last_record = DateTimeField(default=datetime.now)
+    timeout = IntegerField(
+        default=default_session_timeout
+    )  # as seconds, 0 means no timeout
 
 
 class Message(Model):
