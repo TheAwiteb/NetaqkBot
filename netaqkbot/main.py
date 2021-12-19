@@ -220,6 +220,12 @@ def callback_handler(query: types.CallbackQuery):
                     using_limit=using_limit,
                     language=language,
                 )
+            elif callback[0] == "change_password":
+                utils.reset_password(
+                    chat_id, session.user.id, language=language, check_password=True
+                )
+            elif callback[0] == "change_language":
+                utils.language_message(chat_id, language)
             BOT.answer_callback_query(query.id, "✅")
         elif action == "update":
             if callback[0] == "creat_user" and is_admin:
