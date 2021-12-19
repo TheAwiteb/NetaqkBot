@@ -630,7 +630,12 @@ def login(user: types.User, language: str) -> None:
     )
 
 
-def _logout(session: Session, language: str, is_timeout: bool = False) -> None:
+def _logout(
+    session: Session,
+    language: str,
+    is_timeout: bool = False,
+    with_reset_message: bool = False,
+) -> None:
     """مسح الجلسة
 
     المعطيات:
@@ -639,14 +644,18 @@ def _logout(session: Session, language: str, is_timeout: bool = False) -> None:
         is_timeout (bool): هل يتم قطعها لانهاه تعدت وقت الجلسة ام لا
     """
     logout_successful = get_message(
-        "timeout_message" if is_timeout else "logout_successful",
+        "timeout_message"
+        if is_timeout
+        else "logout_for_reset_message"
+        if with_reset_message
+        else "logout_successful",
         language=language,
         with_format=True,
     ).format(
         timeout=hours2words(
             time_converter(session.timeout, seconds2hours=True), language=language
         )
-    )
+    )  # this format for `timeout_message`
     if Session.get_or_none(Session.id == session.id):
         session.delete_instance()
         BOT.send_message(session.telegram_id, logout_successful)
@@ -662,9 +671,10 @@ def logout(
         user_id (int, optional): ايدي الشخص المراد مسح جميع جلساته
         language (str): لغة الرسائل
     """
+    with_reset_message = bool(user_id)  # قيمة صحيحة اذا كان يوجد ايدي، والعكس
     sessions = [session] if session else Session.filter(Session.user_id == user_id)
     for session in sessions:
-        _logout(session=session, language=language)
+        _logout(session=session, language=language, with_reset_message=True)
 
 
 def set_new_password(
