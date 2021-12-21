@@ -13,6 +13,7 @@ from config import (
     default_language,
     space_url_char,
     exit_event,
+    callback_split_chr,
 )
 from db.models import Session, Plan
 import utils
@@ -34,6 +35,7 @@ def private_command_handler(message: types.Message) -> None:
     # سحب الجلسة ان وجد
     session = Session.get_or_none(Session.telegram_id == user.id)
     session.make_record() if session else None
+    session.update_user(user=user) if session else None
     language = (session.user.language if session else None) or default_language
     is_admin = (
         Plan.get(Plan.name == session.user.plan_name).is_admin if session else False
@@ -179,6 +181,7 @@ def query_language(query: types.CallbackQuery) -> None:
     # سحب الجلسة ان وجد
     session = Session.get_or_none(Session.telegram_id == user.id)
     session.make_record() if session else None
+    session.update_user(user=user) if session else None
     chat_id = query.message.chat.id
     message_id = query.message.id
     language = query.data.split("=")[1]
@@ -198,16 +201,17 @@ def query_language(query: types.CallbackQuery) -> None:
 @BOT.callback_query_handler(func=lambda q: True)
 def callback_handler(query: types.CallbackQuery):
     user = query.from_user
-    chat_id = query.message.chat.id
+    chat_id = str(query.message.chat.id)
     message_id = query.message.id
     # سحب الجلسة ان وجد
     session = Session.get_or_none(Session.telegram_id == user.id)
     session.make_record() if session else None
+    session.update_user(user=user) if session else None
     language = (session.user.language if session else None) or default_language
     is_admin = (
         Plan.get(Plan.name == session.user.plan_name).is_admin if session else False
     )  # default False
-    action, *callback = query.data.split(":")
+    action, *callback = query.data.split(callback_split_chr)
 
     if session:
         if action == "run":
@@ -253,6 +257,41 @@ def callback_handler(query: types.CallbackQuery):
                     ),
                     with_message=True,
                 )
+            elif callback[0] == "sessions":
+                page_number = int(callback[1]) if len(callback) >= 2 else 0
+                keybord_utils.open_sessions_keybord_page(
+                    user_id=session.user.id,
+                    telegram_user_id=chat_id,
+                    message_id=message_id,
+                    page_number=page_number,
+                    with_message=True,
+                    language=language,
+                )
+            elif callback[0] == "session_info":
+                session_id = int(callback[1])
+                page_number = int(callback[2])
+                session_are_killed = utils.get_message(
+                    "session_are_killed", language=language
+                )
+                if not keybord_utils.open_info_keyboard(
+                    # اذ كانت الجلسة مقطوعة False يتم ارجاع
+                    chat_id=chat_id,
+                    session_id=session_id,
+                    message_id=message_id,
+                    page_number=page_number,
+                    is_kill=False,
+                    with_message=True,
+                    language=language,
+                ):
+                    BOT.answer_callback_query(query.id, session_are_killed)
+                    keybord_utils.open_sessions_keybord_page(
+                        user_id=session.user.id,
+                        telegram_user_id=chat_id,
+                        message_id=message_id,
+                        page_number=page_number,
+                        with_message=True,
+                        language=language,
+                    )
             else:
                 pass
         elif action == "updatek":
@@ -280,10 +319,68 @@ def callback_handler(query: types.CallbackQuery):
                     session_timeout=session_timeout,
                     with_message=False,
                 )
+            elif callback[0] == "sessions":
+                page_number = int(callback[1])
+                keybord_utils.open_sessions_keybord_page(
+                    user_id=session.user.id,
+                    telegram_user_id=chat_id,
+                    message_id=message_id,
+                    page_number=page_number,
+                    with_message=False,
+                    language=language,
+                )
+            elif callback[0] == "delete_session":
+                # مسح الجلسة من قائمة الجلسات
+                session_id = int(callback[1])
+                page_number = int(callback[2])
+                utils.parse_kill_session_output(
+                    query.id,
+                    (
+                        kill_status := utils.kill_session(
+                            session, session_id, language=language
+                        )
+                    ),
+                    language=language,
+                )
+                # لايتم تحديث الكيبورد في حالة لم يتم قطع اي جلسة
+                if kill_status != None:
+                    keybord_utils.open_sessions_keybord_page(
+                        user_id=session.user.id,
+                        telegram_user_id=chat_id,
+                        message_id=message_id,
+                        page_number=page_number,
+                        with_message=False,
+                        language=language,
+                    )
+
+            elif callback[0] == "delete_session_info":
+                # مسج الجلسة من قائمة معلوماتها
+                session_id = int(callback[1])
+                page_number = int(callback[2])
+
+                utils.parse_kill_session_output(
+                    query.id,
+                    (
+                        kill_status := utils.kill_session(
+                            session, session_id, language=language
+                        )
+                    ),
+                    language=language,
+                )
+                if kill_status:
+                    keybord_utils.open_info_keyboard(
+                        chat_id=chat_id,
+                        session_id=session_id,
+                        message_id=message_id,
+                        page_number=page_number,
+                        is_kill=True,
+                        with_message=False,
+                        language=language,
+                    )
             else:
                 pass
         elif action == "print":
-            BOT.answer_callback_query(query.id, callback[0])
+            BOT.answer_callback_query(query.id, " ".join(callback))
         else:
             pass
     else:
