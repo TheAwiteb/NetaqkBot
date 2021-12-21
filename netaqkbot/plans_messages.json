@@ -67,7 +67,23 @@
             "hour":"ساعة",
             "hours":"ساعات",
             "infinity_session_timeout":"عدم اغلاق الجلسة",
-            "logout_for_reset_message":"لقد تم تسجيل الخروج من جميع الجلسات بسبب اعادة تعيين كلمة المرور، لمعاودة التسجيل اضغط /login"
+            "logout_for_reset_message":"لقد تم تسجيل الخروج من جميع الجلسات بسبب اعادة تعيين كلمة المرور، لمعاودة التسجيل اضغط /login",
+            "session_page_message":"يمكنك في صفحة الجلسات التحكم في الجلسات المتصلة بهذا الحساب.\nالجلسة التي بجوارها {my_session_button} هي الجلسة الخاصة بك\nلمسح الجلسة اضغط على {delete_session_button} بجوار الجلسة\nللمزيد من المعلومات بخصوص الجلسة اضغط {more_info_button} بجوار الجلسة\nملاحظة: لايمكنك مسح الجلسات الاقدم من جلستك",
+            "my_session_button":"⭐",
+            "delete_session_button":"❌",
+            "more_info_button":"ℹ️",
+            "your_session_message":"هذا الجلسة خاصة بك",
+            "session_create_date":"تاريخ انشاء الجلسة",
+            "page_word":"الصفحة",
+            "total_word":"المجموع",
+            "session_info_message":"جميع الاوقات التي بالاسفل هي بالتوقيت العالمي UTC\nايدي المستخدم: {user_id}\nاسم المستخدم: {username}\nاسمه الكامل: {full_name}\nوقت انشاء الجلسة: {created_at}\nاخر تسجيل للجلسة: {last_reported_at}\nالمهلة الزمنية للجلسة: {timeout}",
+            "kill_session_button": "قطع الجلسة ❌",
+            "kill_session_successful": "تم قطع الجلسة بنجاح ✅",
+            "session_are_killed":"هذه الجلسة مقطوعة",
+            "kill_from_another":"تم قطع الجلسة من {full_name}",
+            "cannot_kill_session":"عذرا لايمكنك قطع جلسة اقدم من جلستك",
+            "no_found_message":"لايوجد"
+
         },
         "en": {
             "start":"start message",
