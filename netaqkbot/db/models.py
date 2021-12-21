@@ -1,4 +1,5 @@
 from peewee import *
+from telebot import types
 from datetime import datetime
 from threading import Thread
 from time import time
@@ -56,6 +57,24 @@ class Session(Model):
         ) >= self.last_record.timestamp() and self.timeout != 0:
             # تم تعدي وقت الجلسة
             _logout(self, self.user.language, is_timeout=True)
+
+    def update_user(self, user: types.User) -> None:
+        """ التحقق من تطابق معلومات صاحب الجلسة بالموجودة في قاعدة البيانات
+
+        المعطيات:
+            user (types.User): المستخدم، صاحب الجلسة
+        """
+        if user.username != self.telegram_username:
+            self.telegram_username = user.username
+            self.save()
+
+        if user.first_name != self.telegram_first_name:
+            self.telegram_first_name = user.first_name
+            self.save()
+
+        if user.last_name != self.telegram_last_name:
+            self.telegram_last_name = user.last_name
+            self.save()
 
     @classmethod
     def run_timeout_checker(cls: "Session") -> None:
