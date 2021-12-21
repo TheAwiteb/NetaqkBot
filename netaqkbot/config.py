@@ -2,6 +2,7 @@
 سوف يتم حفظ المتغيرات الاساسية في هذا الملف
 """
 from password_strength import PasswordPolicy
+import re
 from os import environ
 from pathlib import Path
 from dotenv import load_dotenv
@@ -71,6 +72,12 @@ max_session_timeout = 5  # 5h
 
 check_timeout_delay = 3 * 60  # 3m
 exit_event = Event()
+
+max_session_in_page = 3  # maximum sessions number in sessions page
+time_format = "%x %X"
+callback_split_chr = ":*:"
+HTML_CLEANR = re.compile("<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});")
+
 
 # التوكن الخاص بالبوت
 # يمكن جلب التوكن الخاص بالبوت من
