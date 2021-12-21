@@ -1,8 +1,10 @@
 from telebot import types
 from typing import Optional
-from config import BOT
+import re
+from config import BOT, HTML_CLEANR
 from tele_keybord import keybords
 import utils
+from db.models import Session
 
 
 def update_keyboard(
@@ -10,6 +12,7 @@ def update_keyboard(
     chat_id: str,
     message_id: Optional[int] = None,
     message_text: Optional[str] = None,
+    is_html=False,
 ) -> None:
     """تعديل الكيبورد الخاص بالرسالة مع النص الخاص بها ان وجد
 
@@ -18,13 +21,24 @@ def update_keyboard(
         chat_id (str): الشات المراد ارسال الكيبورد فيه
         message_id (int, optional): ايدي الرسالة المراد تعديلها ان وجد.
         message_text (str, optional): الرسالة المراد وضعها مع الكيبورد (اذا كنت تريد تغيرها، يمكنك تمرير الكيبورد فقط لتحديثه بدون تحديث الرسالة)
+        is_html (bool): html هل يوجد بالرسالة
     """
     if message_id:
         if message_text:
-            BOT.edit_message_text(message_text, chat_id, message_id)
+            BOT.edit_message_text(
+                message_text,
+                chat_id,
+                message_id,
+                parse_mode="HTML" if is_html else None,
+            )
         BOT.edit_message_reply_markup(chat_id, message_id, reply_markup=keyboard_markup)
     else:
-        BOT.send_message(chat_id, message_text, reply_markup=keyboard_markup)
+        BOT.send_message(
+            chat_id,
+            message_text,
+            reply_markup=keyboard_markup,
+            parse_mode="HTML" if is_html else None,
+        )
 
 
 def open_home_page(
@@ -56,7 +70,7 @@ def open_create_user_page(
     message_id: Optional[int] = None,
     plan_number: Optional[int] = 0,
     using_limit: Optional[int] = 0,
-):
+) -> None:
     """فتح اللوحة الخاصة بانشاء المستخدم او تحديث الكيبورد الخاص بها اذا تم تمرير ايدي الرسالة
 
     المعطيات:
@@ -87,7 +101,7 @@ def open_start_keybord_page(
     is_admin: bool,
     with_message: bool,
     message_id: Optional[int] = None,
-):
+) -> None:
     """فتح اللوحة الخاصة بانشاء المستخدم او تحديث الكيبورد الخاص بها اذا تم تمرير ايدي الرسالة
 
     المعطيات:
@@ -119,7 +133,7 @@ def open_setting_keybord_page(
     with_message: bool,
     session_timeout: int,
     message_id: Optional[int] = None,
-):
+) -> None:
     """فتح اللوحة الخاصة بانشاء المستخدم او تحديث الكيبورد الخاص بها اذا تم تمرير ايدي الرسالة
 
     المعطيات:
@@ -140,3 +154,118 @@ def open_setting_keybord_page(
         message_id,
         setting_message if with_message else None,
     )
+
+
+def open_sessions_keybord_page(
+    user_id: int,
+    language: str,
+    telegram_user_id: str,
+    with_message: bool,
+    page_number: int,
+    message_id: Optional[int] = None,
+) -> None:
+    """فتح اللوحة الخاصة بالجلسات او تحديث الكيبورد الخاص بها اذا تم تمرير ايدي الرسالة
+
+    المعطيات:
+        user_id (int): ايدي المستخدم في قاعدة البيانات
+        telegram_user_id (int): ايدي المستخدم في التيليجرام
+        language (str): اللغة
+        page_number (int, optional): رقم الصفحة المراد. Defaults to 0.
+    """
+
+    (
+        sessions,
+        pages_number,
+        page_number,
+        my_session_button,
+        delete_session_button,
+        more_info_button,
+        your_session_message,
+    ) = keybords.get_session_keyboard_variables(user_id, language, page_number)
+
+    session_page_message = utils.get_message(
+        "session_page_message", language=language
+    ).format(
+        page_number=page_number + 1,
+        pages_number=pages_number,
+        my_session_button=my_session_button,
+        delete_session_button=delete_session_button,
+        more_info_button=more_info_button,
+    )
+    update_keyboard(
+        keybords.sessions_keybord(user_id, telegram_user_id, language, page_number),
+        telegram_user_id,
+        message_id,
+        session_page_message if with_message else None,
+    )
+
+
+def open_info_keyboard(
+    chat_id: str,
+    session_id: int,
+    message_id: int,
+    language: str,
+    page_number: int,
+    is_kill: bool = False,
+    with_message: bool = False,
+) -> bool:
+    """فتح لوحة معلومات الجلسة
+
+    المعطيات:
+        chat_id (int): ايدي الدردشة
+        session_id (int): ايدي الجلسة
+        message_id (int): ايدي االرسالة
+        language (str): اللغة
+        page_number (int): رقم الصفحة الخاصة بالجلسة في صفحة الجلسات
+        is_kill (bool, optional): هل تم قتل الجلسة. Defaults to False.
+        with_message (bool, optional): تحديث الرسالة ام لا. Defaults to False.
+
+    المخرجات:
+        bool: هل الجلسة موجودة ام لا
+    """
+    session: Optional[Session] = Session.get_or_none(Session.id == session_id)
+    if session:
+        full_name = (
+            f"{session.telegram_first_name} {session.telegram_last_name or ''}".strip()
+        )
+        # ان وجد HTML ازالة نص الـ
+        full_name = re.sub(HTML_CLEANR, "", full_name)
+        no_found_message = utils.get_message("no_found_message", language=language)
+        session_info_message = utils.get_message(
+            "session_info_message", language=language
+        ).format(
+            user_id=f"<a href='tg://user?id={session.telegram_id}'>{session.telegram_id}</a>",
+            username=f"@{session.telegram_username}"
+            if session.telegram_username
+            else no_found_message,
+            full_name=full_name,
+            created_at=utils.format_time(session.created_at),
+            last_reported_at=utils.format_time(session.last_record),
+            timeout=utils.hours2words(
+                utils.time_converter(session.timeout, seconds2hours=True),
+                language=language,
+            )
+            if session.timeout
+            else no_found_message,
+        )
+        update_keyboard(
+            keybords.info_keyword(
+                page_number, session_id, language=language, is_kill=is_kill
+            ),
+            chat_id,
+            message_id,
+            session_info_message,
+            is_html=True,
+        )
+        return True
+    elif not with_message:
+        update_keyboard(
+            keybords.info_keyword(
+                page_number, session_id, language=language, is_kill=is_kill
+            ),
+            chat_id,
+            message_id,
+            None,
+        )
+    else:
+        return False
