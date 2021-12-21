@@ -1,9 +1,12 @@
+from re import L
 from peewee import IntegrityError
 from telebot import types, util
 from typing import Optional, Tuple
 from random import choice
 from string import hexdigits
 from hashlib import sha256
+from datetime import datetime
+from pytz import UTC
 from password_strength import tests
 from difflib import SequenceMatcher
 from num2words import num2words
@@ -20,6 +23,7 @@ from config import (
     plans,
     unique_code_length,
     space_url_char,
+    time_format,
 )
 from db.models import Message, Url, User, Session, Plan
 
@@ -60,6 +64,18 @@ def time_converter(the_time: int, seconds2hours: bool = False) -> int:
         return (the_time // 60) // 60
     else:
         return int((the_time * 60) * 60)
+
+
+def format_time(date: datetime) -> str:
+    """عمل فورمات للوقت المعطى
+
+    المعطيات:
+        date (datetime): الوقت المراد عمل فورمات له
+
+    المخرجات:
+        str: الوقت بعد عمل فورمات له
+    """
+    return date.astimezone(UTC).strftime(time_format)
 
 
 def hours2words(hours_num: int, language: str) -> str:
@@ -635,6 +651,7 @@ def _logout(
     language: str,
     is_timeout: bool = False,
     with_reset_message: bool = False,
+    custom_message: Optional[str] = None,
 ) -> None:
     """مسح الجلسة
 
@@ -642,6 +659,8 @@ def _logout(
         session (Session): الجلسة المراد مسحها
         language (str): اللغة لكي يتم ارسال رسالة المسح
         is_timeout (bool): هل يتم قطعها لانهاه تعدت وقت الجلسة ام لا
+        with_reset_message (bool): مع رسالة اعادة التعيين
+        custom_message (str, optional): رسالة خاصة يتم ارسالها عند قطع الجلسة
     """
     logout_successful = get_message(
         "timeout_message"
@@ -658,7 +677,10 @@ def _logout(
     )  # this format for `timeout_message`
     if Session.get_or_none(Session.id == session.id):
         session.delete_instance()
-        BOT.send_message(session.telegram_id, logout_successful)
+        BOT.send_message(
+            session.telegram_id,
+            logout_successful if not custom_message else custom_message,
+        )
 
 
 def logout(
@@ -674,7 +696,9 @@ def logout(
     with_reset_message = bool(user_id)  # قيمة صحيحة اذا كان يوجد ايدي، والعكس
     sessions = [session] if session else Session.filter(Session.user_id == user_id)
     for session in sessions:
-        _logout(session=session, language=language, with_reset_message=True)
+        _logout(
+            session=session, language=language, with_reset_message=with_reset_message
+        )
 
 
 def set_new_password(
@@ -848,3 +872,59 @@ def send_url(
         f"{send_url_message.format(plans_[plan_number], using_limit or '♾')}\n<code>{url}</code>",
         parse_mode="HTML",
     )
+
+
+def kill_session(session: Session, session_id: int, language: str) -> Optional[bool]:
+    """قطع الجلسة عبر الزر
+
+    المعطيات:
+        session (Session): جلسة من قام بقطع الجلسة
+        session_id (int): ايدي الجلسة المراد قطعها
+        language (str): اللغة
+
+    المخرجات:
+        Optional[bool]: اذا تم قطع الجلسة بنجاج `Treu`\n
+                        اذ لم تكن الجلسة المراد قطعها موجودة `False`\n
+                        اذا كانت الجلسة المراد قطعها اقدم من الجلسة التي تريد القطع `None`\n
+    """
+
+    full_name = f"{session.telegram_first_name} {session.telegram_last_name or ''}"
+    kill_message = get_message("kill_from_another", language=language).format(
+        full_name=full_name
+    )
+
+    if session_ := Session.get_or_none(Session.id == session_id):
+        # تم وضع المساواة لان ممكن صاحب الجلسة يريد قطع جلسته
+        if session.created_at.timestamp() <= session_.created_at.timestamp():
+            # في حالة وجود الجلسة وهي ليست اقدم من الجلسة التي تريد القطع
+            _logout(
+                session_,
+                language=language,
+                custom_message=kill_message if session.id != session_id else None,
+            )
+            return True
+        else:
+            # في حالة وجود الجلسة وهي اقدم من الجلسة التي تريد القطع
+            return None
+    else:
+        # في حالة عدم وجود الجلسة
+        return False
+
+
+def parse_kill_session_output(query_id: int, output: Optional[bool], language: str):
+    """`kill_session` معالجة مخرجات دالة
+
+    المعطيات:
+        query (int): الكويري المراد الرد عليه
+        output (Optional[bool]): `kill_session` مخرجات دالة
+    """
+    session_are_killed = get_message("session_are_killed", language=language)
+    kill_session_successful = get_message("kill_session_successful", language=language)
+    cannot_kill_session = get_message("cannot_kill_session", language=language)
+    if output:  # True
+        BOT.answer_callback_query(query_id, kill_session_successful)
+    else:
+        if output is None:
+            BOT.answer_callback_query(query_id, cannot_kill_session)
+        else:  # False
+            BOT.answer_callback_query(query_id, session_are_killed)
