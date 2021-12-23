@@ -57,7 +57,12 @@ def private_command_handler(message: types.Message) -> None:
         else:
             # رسالة البداية
             keybord_utils.open_start_keybord_page(
-                chat_id, language, is_admin, with_message=True
+                chat_id,
+                language,
+                is_admin,
+                with_message=True,
+                # يتم عرض الزر ااذا كان في جلسة
+                with_button=bool(session),
             )
     elif command == "help":
         # رسالة المساعدة
