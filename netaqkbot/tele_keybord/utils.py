@@ -8,16 +8,17 @@ from db.models import Session
 
 
 def update_keyboard(
-    keyboard_markup: types.InlineKeyboardMarkup,
+    keyboard_markup: Optional[types.InlineKeyboardMarkup],
     chat_id: str,
     message_id: Optional[int] = None,
     message_text: Optional[str] = None,
     is_html=False,
 ) -> None:
     """تعديل الكيبورد الخاص بالرسالة مع النص الخاص بها ان وجد
+        يمكنك ارسال الرسالة بدون كيبورد في حال عدم تمريره
 
     المعطيات:
-        keyboard_markup (types.InlineKeyboardMarkup): الكيبورد الجديد
+        keyboard_markup (types.InlineKeyboardMarkup, optional): الكيبورد الجديد
         chat_id (str): الشات المراد ارسال الكيبورد فيه
         message_id (int, optional): ايدي الرسالة المراد تعديلها ان وجد.
         message_text (str, optional): الرسالة المراد وضعها مع الكيبورد (اذا كنت تريد تغيرها، يمكنك تمرير الكيبورد فقط لتحديثه بدون تحديث الرسالة)
@@ -31,12 +32,15 @@ def update_keyboard(
                 message_id,
                 parse_mode="HTML" if is_html else None,
             )
-        BOT.edit_message_reply_markup(chat_id, message_id, reply_markup=keyboard_markup)
+        if keyboard_markup:
+            BOT.edit_message_reply_markup(
+                chat_id, message_id, reply_markup=keyboard_markup
+            )
     else:
         BOT.send_message(
             chat_id,
             message_text,
-            reply_markup=keyboard_markup,
+            reply_markup=keyboard_markup if keyboard_markup else None,
             parse_mode="HTML" if is_html else None,
         )
 
@@ -99,6 +103,7 @@ def open_start_keybord_page(
     chat_id: str,
     language: str,
     is_admin: bool,
+    with_button: bool,
     with_message: bool,
     message_id: Optional[int] = None,
 ) -> None:
@@ -119,7 +124,9 @@ def open_start_keybord_page(
         ),
     )
     update_keyboard(
-        keybords.start_keybord(is_admin=is_admin, language=language),
+        keybords.start_keybord(is_admin=is_admin, language=language)
+        if with_button
+        else None,
         chat_id,
         message_id,
         start_keyboard_message if with_message else None,
